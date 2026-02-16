@@ -1,0 +1,31 @@
+--                                                                      00010101
+-- Tables for the PetroNet system  ---                                  00010202
+-- for use in IBM ZXPLORE training ---                                  00010302
+-- John Braddock                                                        00010402
+-- February 2026                                                        00010502
+--                                                                      00011001
+--create table CUST_TBL                                                 00011102
+--   ( CUST_NO      char(8)                                             00011202
+--   , CUST_NAME    char(25)                                            00011302
+--   , REC_TMSTAMP  timestamp                                           00011402
+--   );                                                                 00011502
+--                                                                      00011602
+--create table LOCN_TBL                                                 00012002
+--   ( LOCN_NO      char(4)                                             00013003
+--   , LOCN_NAME    char(25)                                            00014003
+--   , REC_TMSTAMP  timestamp                                           00014103
+--   );                                                                 00015002
+--                                                                      00020001
+--create table PROD_TBL                                                 00020102
+--   ( PROD_NO      char(6)                                             00020202
+--   , PROD_DESC    char(25)                                            00020302
+--   , REC_TMSTAMP  timestamp                                           00020402
+--   );                                                                 00020502
+--                                                                      00021002
+create table STOCK_HOLDING_TBL                                          00030001
+    ( LOCN_NO       char(4)                                             00040002
+    , PROD_NO       char(6)                                             00050002
+    , ON_HAND_QTY   integer                                             00060002
+    , ON_ORDER_QTY  integer                                             00061002
+    , REC_TMSTAMP   timestamp                                           00070002
+    );                                                                  00080001
