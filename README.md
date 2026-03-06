@@ -1,7 +1,9 @@
 # PetroNet-for-mainframe
 A system for a distributor to manage their stocks and logistics. Written in COBOL DB2 for the ZOS platform.
 
-This system is for a distritbotor to manage their stock inventories and customers at their various depots. STock can be received into the inventory, and is then sold to customers at that depot. All stock receipts are tracked as well as sales, transfers out, and stock adjustments.
+This system is for a distributor to manage their stock inventories and customers at their various depots. Stock can be received into the inventory, and is then sold to customers at that depot. All stock receipts are tracked as well as sales, transfers out, and stock adjustments.
+
+A retail interface allows retail transactions to be loaded into the database. If these transactions are for known customers and stock held at the distributorship, then these retail transactions will affect stock levels and customer accounts.
 
 The system is written for the IBM ZOS environment using COBOL, DB2 and interfaces in REXX and CICS.
 
