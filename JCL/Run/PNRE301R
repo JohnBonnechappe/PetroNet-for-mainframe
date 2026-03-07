@@ -1,0 +1,12 @@
+//PNRE301R  JOB 1,JOHNB,TIME=(1,1),NOTIFY=&SYSUID
+//*
+//* Run Retail Transaction List.
+//* This generates a listing of a retail transaction file.
+//* COBOL program PNRE301
+//*
+//STEP01   EXEC  PGM=PNRE301
+//STEPLIB      DD DSNAME=Z63454.PETRONET.LOAD,DISP=SHR
+//RTLFILE      DD DSNAME=Z63454.PETRONET.RETAIL(RTLTRAN1),DISP=SHR
+//PRTFILE      DD  SYSOUT=*
+//SYSPRINT     DD  SYSOUT=*
+/*
