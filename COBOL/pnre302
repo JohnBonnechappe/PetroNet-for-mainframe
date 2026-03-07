@@ -1,0 +1,124 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID pnre302. 
+       AUTHOR. John Braddock
+      ***************************************************************** 00021003
+      * Name: Load Retail Transactions into database
+      * Description. Load retail transactions into RETAIL_TRANSN_TBL
+      ***************************************************************** 00022003
+       ENVIRONMENT DIVISION.                                            00020000
+       INPUT-OUTPUT SECTION.                                            00020105
+       FILE-CONTROL.
+           SELECT rtl_file   ASSIGN TO rtlfile
+           FILE STATUS IS ws_file_sts.                                          
+    
+       DATA DIVISION.                                                   00030000
+       FILE SECTION.
+       FD  rtl_file
+           RECORDING MODE F
+           RECORD CONTAINS 80 CHARACTERS.
+       01 rtl_rec.
+          03  seq_nbr                  PIC 9(4).
+          03  sys_name                 PIC X(10).
+          03  site_name                PIC X(10).
+          03  transn_date              PIC X(8).
+          03  transn_time              PIC X(6).
+          03  cust_no                  PIC X(8).
+          03  sale_item                PIC X(10).
+          03  sale_qty                 PIC 9(4).
+          03  sale_price               PIC 9(7)V9(2).
+          03                           PIC X(11).                               
+       WORKING-STORAGE SECTION.                                         00031004
+       01  pgm_error_sts         PIC 9.
+       01  ws_err_sts                  PIC 9.
+       01  ws_file_sts                 PIC X(2).
+
+       01  ws_rtl_file_open_sts        PIC X. 
+
+       01  rtl_eof_sts                 PIC X.
+
+       01  ws_rtl_rec_cnt1             PIC 9(4) COMP.
+
+       PROCEDURE DIVISION.                                              00040000
+           DISPLAY "PNRE302  Version 1.02"
+
+           PERFORM 1000_init
+  
+           PERFORM 2000_connect
+
+           IF ws_err_sts = 0
+               PERFORM 200_open_rtl_file
+           END-IF
+
+           IF ws_err_sts = 0
+               MOVE "N" TO rtl_eof_sts
+               PERFORM 1000_read_tran_rec
+           END-IF
+
+           IF ws_err_sts = 0
+              PERFORM 500_process_rtl_file
+                UNTIL rtl_eof_sts = "Y"
+                   OR ws_err_sts  = 1
+           END-IF
+ 
+           PERFORM 700_close_files
+
+           STOP RUN                                                     00060000
+           .
+       1000_init.
+           MOVE 0    TO return-code
+           MOVE 0    TO pgm_error_sts 
+           MOVE "N"  TO ws_rtl_file_open_sts
+           . 
+           
+       200_open_rtl_file.
+           OPEN INPUT  rtl_file
+           if ws_file_sts = "00"
+               DISPLAY "Opened retail transaction file"
+               MOVE "Y" TO ws_rtl_file_open_sts
+           ELSE
+               MOVE 1 TO ws_err_sts
+               DISPLAY "error open rtl file. sts=" ws_file_sts
+           END-IF
+           .
+
+       500_process_rtl_file.
+           PERFORM 2000_LOAD_rtl_rec
+
+           IF ws_err_sts = 0
+               PERFORM 1000_read_tran_rec
+           END-IF
+           .
+
+       700_close_files.
+           DISPLAY "closing files"
+
+           IF ws_rtl_file_open_sts = "Y"
+               CLOSE rtl_file
+           END-IF
+           .
+
+       1000_read_tran_rec.
+           READ rtl_file
+                AT END MOVE "Y" TO rtl_eof_sts
+           END-READ
+
+           EVALUATE ws_file_sts
+           WHEN "00"
+                  DISPLAY "read rec"
+                  ADD 1 TO ws_rtl_rec_cnt1
+           WHEN "10"
+                  DISPLAY "eof rtl rec"
+           WHEN OTHER
+                  DISPLAY "read rec sts=" ws_file_sts
+                  MOVE 1 TO ws_err_sts
+           END-EVALUATE
+           .
+
+       2000_connect.                                                    00110008
+           DISPLAY "Connecting DB2"                                     00120008
+           .
+
+       2000_load_rtl_rec.
+           DISPLAY "loading rtl rec"
+           .
+      * eof                                                            00130008
