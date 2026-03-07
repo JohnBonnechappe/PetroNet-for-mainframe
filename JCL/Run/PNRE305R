@@ -1,0 +1,12 @@
+//PNRE302R  JOB 1,JOHNB,TIME=(1,1),NOTIFY=&SYSUID
+//*
+//* Run Retail Transaction List for acustomer.
+//* This loads a retail transaction file into the RETAIL_TRANSN_TBL.
+//* COBOL program PNRE302
+//*
+//STEP01   EXEC  PGM=PNRE305
+//STEPLIB      DD DSNAME=Z63454.PETRONET.LOAD,DISP=SHR
+//RTLFILE      DD DSNAME=Z63454.PETRONET.RETAIL(RTLTRAN1),DISP=SHR
+//PRTFILE      DD  SYSOUT=*
+//SYSPRINT     DD  SYSOUT=*
+/*
