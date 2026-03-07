@@ -1,0 +1,19 @@
+//PNRE302L  JOB 1,JOHNB,TIME=(1,1),NOTIFY=&SYSUID
+//*
+//* Compile and link PNRE302
+//* COBOL program for REtail Transaction Load
+//*
+//* first clear the load library
+//STEP01       EXEC PGM=IDCAMS
+//SYSOUT        DD SYSOUT=*
+//SYSPRINT      DD DUMMY
+//SYSIN         DD *
+  DELETE Z63454.PETRONET.LOAD(PNRE302)
+  IF MAXCC = 8 THEN SET MAXCC = 0
+/*
+//* Now compile and link
+//STEP02       EXEC  PROC=IGYWCL
+//COBOL.SYSIN   DD  DSNAME=Z63454.PETRONET.COBOL(PNRE302),DISP=SHR
+//LKED.SYSLMOD  DD  DSNAME=Z63454.PETRONET.LOAD(PNRE302),DISP=SHR
+//SYSPRINT      DD  SYSOUT=*
+/*
