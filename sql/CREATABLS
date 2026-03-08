@@ -28,4 +28,19 @@ create table STOCK_HOLDING_TBL                                          00030001
     , ON_HAND_QTY   integer                                             00060002
     , ON_ORDER_QTY  integer                                             00061002
     , REC_TMSTAMP   timestamp                                           00070002
-    );                                                                  00080001
+    );
+
+CREATE RETAIL_TRANSN_TBL
+    (SEQ_NO            SMALLINT
+    ,RETAIL_SYS_NAME   CHAR(10)
+    ,SITE_NAME         CHAR(10)
+    ,TRANSN_DATE       CHAR(8)
+    ,TRANSN_TIME       CHAR(6)
+    ,CUST_NO           CHAR(8)
+    ,SALE_ITEM         CHAR(10)
+    ,SALE_QTY          SMALLINT
+    ,SALE_PRICE        DECIMAL(9,2)
+    ,REC_TMSTAMP       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    IN Z63454
+    ;
