@@ -21,7 +21,7 @@
            RECORD CONTAINS 80 CHARACTERS.
        01 rtl_rec.
           03  seq_nbr                  PIC 9(4).
-          03  sys_name                 PIC X(10).
+          03  retail_sys_name          PIC X(10).
           03  site_name                PIC X(10).
           03  transn_date              PIC X(8).
           03  transn_time              PIC X(6).
@@ -41,10 +41,14 @@
 
        01  ws_rtl_rec_cnt1             PIC 9(4) COMP.
 
+       01  ws_retail_sys_name          PIC X(10).
+       01  ws_tmstamp                  PIC X(26).
+
        EXEC SQL INCLUDE SQLCA END-EXEC.
+       EXEC SQL INCLUDE RTLTRN  END-EXEC.
 
        PROCEDURE DIVISION.                                              00040000
-           DISPLAY "PNRE302  Version 1.02"
+           DISPLAY "PNRE305  Version 1.02"
 
            PERFORM 1000_init
 
@@ -125,5 +129,51 @@
 
        2000_load_rtl_rec.
            DISPLAY "loading rtl rec"
+
+           MOVE cust_no   OF rtl_rec
+             TO cust-no   OF dclretail-transn-tbl
+           MOVE sale_item OF rtl_rec
+             TO sale-item OF dclretail-transn-tbl
+           MOVE sale_qty  OF rtl_rec
+             TO sale-qty  OF dclretail-transn-tbl
+
+           MOVE retail_sys_name OF rtl_rec
+             TO ws_retail_sys_name
+           MOVE "2026-03-08 15:16:10.123" TO ws_tmstamp
+
+           EXEC SQL
+               INSERT INTO RETAIL_TRANSN_TBL
+               (SEQ_NO
+               ,RETAIL_SYS_NAME
+               ,SITE_NAME
+               ,TRANSN_DATE
+               ,TRANSN_TIME
+               ,CUST_NO
+               ,SALE_ITEM
+               ,SALE_QTY
+               ,SALE_PRICE
+               ,REC_TMSTAMP
+               )
+               VALUES
+               (:seq-no
+               ,:ws_retail_sys_name
+               ,:site-name
+               ,:transn-date
+               ,:transn-time
+               ,:cust-no
+               ,:sale-item
+               ,:sale-qty
+               ,:sale-price
+               ,:ws_tmstamp
+               )
+           END-EXEC.
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "record inserted"
+           WHEN OTHER
+               DISPLAY "sql error code=" sqlcode
+               MOVE 1 TO  ws_err_sts
+           END-EVALUATE
            .
       * eof                                                            00130008
