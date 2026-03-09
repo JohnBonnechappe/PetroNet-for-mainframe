@@ -15,7 +15,10 @@ Retail Interface
     Applies transactions from the RETAIIL_TRANSN-TBL to the STOCK-HOLDING-TBL and CUST-ACCT-TBL
 
 Stocks
-✔ TBA
+
+✔ PNST203
+    Stock movements report, based on the STOCK_TRANSN_TBL
 
 Debtors
+
 ✔ TBA
