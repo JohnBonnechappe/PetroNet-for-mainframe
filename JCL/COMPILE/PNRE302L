@@ -3,7 +3,9 @@
 //* Compile and link PNRE302
 //* COBOL program for REtail Transaction Load
 //*
+//*------------------------------------------------------------
 //* first clear the load library
+//*------------------------------------------------------------
 //STEP01       EXEC PGM=IDCAMS
 //SYSOUT        DD SYSOUT=*
 //SYSPRINT      DD DUMMY
@@ -11,9 +13,72 @@
   DELETE Z63454.PETRONET.LOAD(PNRE302)
   IF MAXCC = 8 THEN SET MAXCC = 0
 /*
-//* Now compile and link
-//STEP02       EXEC  PROC=IGYWCL
-//COBOL.SYSIN   DD  DSNAME=Z63454.PETRONET.COBOL(PNRE302),DISP=SHR
-//LKED.SYSLMOD  DD  DSNAME=Z63454.PETRONET.LOAD(PNRE302),DISP=SHR
+//*------------------------------------------------------------
+//* Now compile put obj file into &&loadset
+//*------------------------------------------------------------
+//STEP02       EXEC  PGM=IGYCRCTL,REGION=0M,PARM='SQL'
+//STEPLIB        DD  DSN=IGY640.SIGYCOMP,DISP=SHR
+//               DD  DSN=DSND10.DBDG.SDSNEXIT,DISP=SHR
+//               DD  DSN=DSND10.SDSNLOAD,DISP=SHR
+//               DD  DSN=CEE.SCEERUN,DISP=SHR
+//               DD  DSN=CEE.SCEERUN2,DISP=SHR
+//SYSIN         DD  DSNAME=Z63454.PETRONET.COBOL(PNRE302),
+//        DISP=SHR
+//SYSLIB         DD DSN=&SYSUID..PETRONET.DCLGEN.COBOL,
+//        DISP=SHR
+//DBRMLIB        DD DSN=&SYSUID..PETRONET.DBRMLIB(PNRE302),
+//        DISP=SHR
 //SYSPRINT      DD  SYSOUT=*
+//SYSLIN         DD  DSN=&&LOADSET,UNIT=SYSALLDA,
+//        DISP=(MOD,PASS),SPACE=(CYL,(1,1))
+//SYSUT1        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT2        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT3        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT4        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT5        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT6        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT7        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT8        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT9        DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT10       DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT11       DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT12       DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT13       DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT14       DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSUT15       DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSMDECK      DD UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//*
+//*------------------------------------------------------------
+//* now link from object file &&loadset
+//*------------------------------------------------------------
+//             IF RC <=4 THEN
+//STEP03       EXEC PGM=IEWBLINK,COND=(8,LT,STEP02),REGION=0M
+//SYSLIB          DD  DSN=CEE.SCEELKED,DISP=SHR
+//                DD  DSN=DSND10.SDSNLOAD,DISP=SHR
+//SYSPRINT        DD  SYSOUT=*
+//SYSUT1          DD  UNIT=SYSALLDA,SPACE=(CYL,(1,1))
+//SYSLIN          DD  DSN=&&LOADSET,DISP=(OLD,DELETE)
+//SYSLMOD         DD  DSN=&SYSUID..PETRONET.LOAD(PNRE302),DISP=SHR
+//             ENDIF
+//*
+//*------------------------------------------------------------
+//*now bind to the database
+//*------------------------------------------------------------
+//             IF RC <=4 THEN
+//BIND         EXEC PGM=IKJEFT01
+//STEPLIB         DD DSN=DSND10.SDSNLOAD,DISP=SHR
+//DBRMLIB         DD DSN=&SYSUID..PETRONET.DBRMLIB,
+//        DISP=SHR
+//SYSUDUMP        DD DUMMY
+//SYSTSPRT        DD SYSOUT=*
+//SYSPRINT        DD SYSOUT=*
+//SYSTSIN         DD *,SYMBOLS=CNVTSYS
+  DSN SYSTEM(DBDG)
+  BIND PLAN(&SYSUID.)             -
+       MEMBER(PNRE302)            -
+       ACTION(REPLACE)            -
+       ISOLATION(CS)              -
+       PKLIST(&SYSUID..PETRONET.*)-
+       ENCODING(EBCDIC)
+//             ENDIF
 /*
