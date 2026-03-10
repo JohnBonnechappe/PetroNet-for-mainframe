@@ -44,8 +44,9 @@
        01  ws_retail_sys_name          PIC X(10).
        01  ws_tmstamp                  PIC X(26).
 
-       EXEC SQL INCLUDE SQLCA END-EXEC.
+       EXEC SQL INCLUDE SQLCA   END-EXEC.
        EXEC SQL INCLUDE RTLTRN  END-EXEC.
+      *EXEC SQL END-EXEC.
 
        PROCEDURE DIVISION.                                              00040000
            DISPLAY "PNRE305  Version 1.02"
