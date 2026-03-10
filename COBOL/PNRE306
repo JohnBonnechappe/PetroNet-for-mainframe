@@ -147,7 +147,7 @@
 
            EVALUATE sqlcode
            WHEN 0
-               DISPLAY "record selcted"
+               DISPLAY "record selected"
            WHEN OTHER
                DISPLAY "sql error code=" sqlcode
                DISPLAY "sql error mesg=" sqlerrm
