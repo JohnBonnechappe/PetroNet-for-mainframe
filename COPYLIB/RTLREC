@@ -1,0 +1,19 @@
+      *
+      * Retail transaction file
+      * transn_type = "S" sale, "R" return, "P" payment
+      * transn_method - 1, cash, 2 cheque, 3 credid card , 4 eftpos
+      *
+       01 rtl_rec.
+          03  seq_no                   PIC 9(4).
+          03  retail_sys_name          PIC X(10).
+          03  site_name                PIC X(10).
+          03  transn_date              PIC X(8).
+          03  transn_time              PIC X(6).
+          03  transn_type_code         PIC X.
+          03  transn_payt_method_code  PIC X.
+          03  cust_no                  PIC X(8).
+          03  sale_item                PIC X(10).
+          03  sale_qty                 PIC 9(4).
+          03  sale_price               PIC 9(7)V9(2).
+          03                           PIC X(09).
+      *
