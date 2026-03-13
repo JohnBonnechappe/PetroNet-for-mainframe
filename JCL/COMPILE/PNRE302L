@@ -26,6 +26,8 @@
 //        DISP=SHR
 //SYSLIB         DD DSN=&SYSUID..PETRONET.DCLGEN.COBOL,
 //        DISP=SHR
+//               DD DSN=&SYSUID..PETRONET.COPYLIB,
+//        DISP=SHR
 //DBRMLIB        DD DSN=&SYSUID..PETRONET.DBRMLIB(PNRE302),
 //        DISP=SHR
 //SYSPRINT      DD  SYSOUT=*
@@ -72,13 +74,13 @@
 //SYSUDUMP        DD DUMMY
 //SYSTSPRT        DD SYSOUT=*
 //SYSPRINT        DD SYSOUT=*
-//SYSTSIN         DD *,SYMBOLS=CNVTSYS
-  DSN SYSTEM(DBDG)
-  BIND PLAN(&SYSUID.)             -
-       MEMBER(PNRE302)            -
-       ACTION(REPLACE)            -
-       ISOLATION(CS)              -
-       PKLIST(&SYSUID..PETRONET.*)-
-       ENCODING(EBCDIC)
+//SYSTSIN         DD *,SYMBOLS=EXECSYS
+  DSN SYSTEM    (DBDG)
+  BIND PLAN     (&SYSUID.)           -
+       MEMBER   (PNRE302)            -
+       ACTION   (REPLACE)            -
+       ISOLATION(CS)                 -
+       PKLIST   (&SYSUID..*)-
+       ENCODING (EBCDIC)
 //             ENDIF
 /*
