@@ -1,6 +1,7 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID pnre302.
        AUTHOR. John Braddock
+       DATE-WRITTEN. 13-Mar-2026.
       ***************************************************************** 00021003
       * Name: Load Retail Transactions into database
       * Description. Load retail transactions into RETAIL_TRANSN_TBL
@@ -16,30 +17,20 @@
        FD  rtl_file
            RECORDING MODE F
            RECORD CONTAINS 80 CHARACTERS.
-       01 rtl_rec.
-          03  seq_nbr                  PIC 9(4).
-          03  retail_sys_name          PIC X(10).
-          03  site_name                PIC X(10).
-          03  transn_date              PIC X(8).
-          03  transn_time              PIC X(6).
-          03  cust_no                  PIC X(8).
-          03  sale_item                PIC X(10).
-          03  sale_qty                 PIC 9(4).
-          03  sale_price               PIC 9(7)V9(2).
-          03                           PIC X(11).
+       COPY "RTLREC".
+
        WORKING-STORAGE SECTION.                                         00031004
-       01  pgm_error_sts         PIC 9.
-       01  ws_err_sts                  PIC 9.
+       01  ws_pgm_err_sts              PIC 9.
+
        01  ws_file_sts                 PIC X(2).
-
        01  ws_rtl_file_open_sts        PIC X.
-
-       01  rtl_eof_sts                 PIC X.
+       01  ws_rtl_eof_sts              PIC X.
 
        01  ws_rtl_rec_cnt1             PIC 9(4) COMP.
 
-       01  ws_retail_sys_name          PIC X(10).
        01  ws_tmstamp                  PIC X(26).
+
+       01  ws_sqlcode                  PIC -9(9).
 
        EXEC SQL INCLUDE SQLCA   END-EXEC.
        EXEC SQL INCLUDE RTLTRN  END-EXEC.
@@ -51,30 +42,31 @@
 
            PERFORM 2000_connect
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
                PERFORM 200_open_rtl_file
            END-IF
 
-           IF ws_err_sts = 0
-               MOVE "N" TO rtl_eof_sts
+           IF ws_pgm_err_sts = 0
+               MOVE "N" TO ws_rtl_eof_sts
                PERFORM 1000_read_tran_rec
            END-IF
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
               PERFORM 500_process_rtl_file
-                UNTIL rtl_eof_sts = "Y"
-                   OR ws_err_sts  = 1
+                UNTIL ws_rtl_eof_sts = "Y"
+                   OR ws_pgm_err_sts  = 1
            END-IF
 
-           PERFORM 3000_close_transaction
+           PERFORM 8000_close_transaction
 
-           PERFORM 700_close_files
+           PERFORM 9000_close_files
 
            STOP RUN                                                     00060000
            .
+
        1000_init.
            MOVE 0    TO return-code
-           MOVE 0    TO pgm_error_sts
+           MOVE 0    TO ws_pgm_err_sts
            MOVE "N"  TO ws_rtl_file_open_sts
            .
 
@@ -84,7 +76,7 @@
                DISPLAY "Opened retail transaction file"
                MOVE "Y" TO ws_rtl_file_open_sts
            ELSE
-               MOVE 1 TO ws_err_sts
+               MOVE 1 TO ws_pgm_err_sts
                DISPLAY "error open rtl file. sts=" ws_file_sts
            END-IF
            .
@@ -92,22 +84,14 @@
        500_process_rtl_file.
            PERFORM 2000_LOAD_rtl_rec
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
                PERFORM 1000_read_tran_rec
-           END-IF
-           .
-
-       700_close_files.
-           DISPLAY "closing files"
-
-           IF ws_rtl_file_open_sts = "Y"
-               CLOSE rtl_file
            END-IF
            .
 
        1000_read_tran_rec.
            READ rtl_file
-                AT END MOVE "Y" TO rtl_eof_sts
+                AT END MOVE "Y" TO ws_rtl_eof_sts
            END-READ
 
            EVALUATE ws_file_sts
@@ -118,7 +102,7 @@
                   DISPLAY "eof rtl rec"
            WHEN OTHER
                   DISPLAY "read rec sts=" ws_file_sts
-                  MOVE 1 TO ws_err_sts
+                  MOVE 1 TO ws_pgm_err_sts
            END-EVALUATE
            .
 
@@ -129,16 +113,32 @@
        2000_load_rtl_rec.
            DISPLAY "loading rtl rec"
 
-           MOVE cust_no   OF rtl_rec
-             TO cust-no   OF dclretail-transn-tbl
-           MOVE sale_item OF rtl_rec
-             TO sale-item OF dclretail-transn-tbl
-           MOVE sale_qty  OF rtl_rec
-             TO sale-qty  OF dclretail-transn-tbl
+           MOVE seq_no                  OF rtl_rec
+             TO seq-no                  OF dclretail-transn-tbl
+           MOVE retail_sys_name         OF rtl_rec
+             TO retail-sys-name         OF dclretail-transn-tbl
+           MOVE site_name               OF rtl_rec
+             TO site-name               OF dclretail-transn-tbl
+           MOVE transn_date             OF rtl_rec
+             TO transn-date             OF dclretail-transn-tbl
+           MOVE transn_time             OF rtl_rec
+             TO transn-time             OF dclretail-transn-tbl
+           MOVE transn_type_code        OF rtl_rec
+             TO transn-type-code        OF dclretail-transn-tbl
+           MOVE transn_payt_method_code OF rtl_rec
+             TO transn-payt-method-code OF dclretail-transn-tbl
+           MOVE "L"
+             TO transn-applied-indic    OF dclretail-transn-tbl
+           MOVE cust_no                 OF rtl_rec
+             TO cust-no                 OF dclretail-transn-tbl
+           MOVE sale_item               OF rtl_rec
+             TO sale-item               OF dclretail-transn-tbl
+           MOVE sale_qty                OF rtl_rec
+             TO sale-qty                OF dclretail-transn-tbl
+           MOVE sale_price              OF rtl_rec
+             TO sale-price              OF dclretail-transn-tbl
 
-           MOVE retail_sys_name OF rtl_rec
-             TO ws_retail_sys_name
-           MOVE "2026-03-08 15:16:10.123" TO ws_tmstamp
+           MOVE "2026-03-13 10:16:10.123" TO ws_tmstamp
 
            EXEC SQL
                INSERT INTO RETAIL_TRANSN_TBL
@@ -152,10 +152,13 @@
                ,SALE_QTY
                ,SALE_PRICE
                ,REC_TMSTAMP
+               ,TRANSN_PAYT_METHOD_CODE
+               ,TRANSN_TYPE_CODE
+               ,TRANSN_APPLIED_INDIC
                )
                VALUES
                (:seq-no
-               ,:ws_retail_sys_name
+               ,:retail-sys-name
                ,:site-name
                ,:transn-date
                ,:transn-time
@@ -164,6 +167,9 @@
                ,:sale-qty
                ,:sale-price
                ,:ws_tmstamp
+               ,:transn-payt-method-code
+               ,:transn-type-code
+               ,:transn-applied-indic
                )
            END-EXEC.
 
@@ -171,25 +177,42 @@
            WHEN 0
                DISPLAY "rtl_transn_tbl record inserted"
            WHEN OTHER
-               DISPLAY "sql error code=" sqlcode
-               MOVE 1 TO  ws_err_sts
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+               MOVE 1 TO  ws_pgm_err_sts
            END-EVALUATE
            .
 
-       3000_close_transaction.
-           IF ws_err_sts = 0
+       8000_close_transaction.
+           IF ws_pgm_err_sts = 0
+               DISPLAY "Initiated Commit"
+               EXEC SQL
+                   COMMIT
+               END-EXEC
+           ELSE
                DISPLAY "Initiated Rollback"
                EXEC SQL
                    ROLLBACK
                END-EXEC
-               EVALUATE sqlcode
-               WHEN 0
-                   DISPLAY "Transaction rolled back"
-               WHEN OTHER
-                   DISPLAY "sql error code=" sqlcode
-      *             DISPLAY "sql error mesg=" sqlerrm
-                   MOVE 1 TO  ws_err_sts
-               END-EVALUATE
            END-IF
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "Transaction rolled back"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+      *         DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
             .
+
+       9000_close_files.
+           DISPLAY "closing files"
+
+           IF ws_rtl_file_open_sts = "Y"
+               CLOSE rtl_file
+           END-IF
+           .
+
       * eof                                                            00130008
