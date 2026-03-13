@@ -11,42 +11,94 @@
        ENVIRONMENT DIVISION.                                            00020000
        INPUT-OUTPUT SECTION.                                            00020105
        FILE-CONTROL.
-           SELECT rtl_file   ASSIGN TO rtlfile
+           SELECT print_file   ASSIGN TO prtfile
            FILE STATUS IS ws_file_sts.
 
        DATA DIVISION.                                                   00030000
        FILE SECTION.
-       FD  rtl_file
+       FD  print_file
            RECORDING MODE F
-           RECORD CONTAINS 80 CHARACTERS.
-       01 rtl_rec.
-          03  seq_nbr                  PIC 9(4).
-          03  retail_sys_name          PIC X(10).
-          03  site_name                PIC X(10).
-          03  transn_date              PIC X(8).
-          03  transn_time              PIC X(6).
-          03  cust_no                  PIC X(8).
-          03  sale_item                PIC X(10).
-          03  sale_qty                 PIC 9(4).
-          03  sale_price               PIC 9(7)V9(2).
-          03                           PIC X(11).
+           RECORD CONTAINS 92 CHARACTERS.
+       01 print_rec                      PIC X(92).
+
        WORKING-STORAGE SECTION.                                         00031004
-       01  pgm_error_sts         PIC 9.
-       01  ws_err_sts                  PIC 9.
+       01  ws_pgm_err_sts              PIC 9.
+
        01  ws_file_sts                 PIC X(2).
+       01  ws_prt_file_open_sts        PIC X.
 
-       01  ws_rtl_file_open_sts        PIC X.
-
+       01  ws_rtl_tbl_open_sts         PIC X.
        01  rtl_eof_sts                 PIC X.
 
        01  ws_rtl_rec_cnt1             PIC 9(4) COMP.
 
+       01  ws_print_hdr_rec.
+           03 seq_no                  PIC X(04) VALUE "Seq".
+           03                         PIC X     VALUE SPACE.
+           03 sys_name                PIC X(10) VALUE "Sys".
+           03                         PIC X     VALUE SPACE.
+           03 site_name               PIC X(10) VALUE "Site".
+           03                         PIC X     VALUE SPACE.
+           03 transn_date             PIC X(08) VALUE "Trn Dt".
+           03                         PIC X     VALUE SPACE.
+           03 transn_time             PIC X(06) VALUE "Trn Tm".
+           03                         PIC X     VALUE SPACE.
+           03 transn_type             PIC x(04) VALUE "Type".
+           03                         PIC X     VALUE SPACE.
+           03 transn_method           PIC X(06) VALUE "Method".
+           03                         PIC X     VALUE SPACE.
+           03 cust_no                 PIC X(08) VALUE "Cust".
+           03                         PIC X     VALUE SPACE.
+           03 sale_item               PIC X(10) VALUE "Item".
+           03                         PIC X(04) VALUE SPACE.
+           03 sale_qty                PIC X(04) VALUE "Qty".
+           03                         PIC X(02) VALUE SPACE.
+           03 sale_price              PIC X(09) VALUE "Price".
+           03                         PIC X(01) VALUE SPACE.
+
+       01  ws_print_tran_rec.
+           03 seq_no                  PIC Z(04).
+           03                         PIC X     VALUE SPACE.
+           03 retail_sys_name         PIC X(10).
+           03                         PIC X     VALUE SPACE.
+           03 site_name               PIC X(10).
+           03                         PIC X     VALUE SPACE.
+           03 transn_date             PIC X(08).
+           03                         PIC X     VALUE SPACE.
+           03 Transn_time             PIC X(06).
+           03                         PIC X     VALUE SPACE.
+           03 transn_type_code        PIC X.
+           03                         PIC X(4)  VALUE SPACE.
+           03 transn_payt_method_code PIC X.
+           03                         PIC X(6)  VALUE SPACE.
+           03 cust_no                 PIC X(08).
+           03                         PIC X     VALUE SPACE.
+           03 sale_item               PIC X(10).
+           03                         PIC X     VALUE SPACE.
+           03 sale_qty                PIC Z(03)9.
+           03                         PIC X     VALUE SPACE.
+           03 sale_price              PIC Z(06).99.
+           03 filler                  PIC X(16) VALUE SPACE.
+
+       01 ws_print_footer_rec.
+           03                        PIC X(10) VALUE SPACES.
+           03                        PIC X(09) VALUE "Rtl recs=".
+           03 rtl_rec_cnt            PIC Z(3)9.
+           03                        PIC X(57) VALUE SPACES.
+           03                        PIC X(25) VALUE SPACES.
+
        01  ws_retail_sys_name          PIC X(10).
        01  ws_tmstamp                  PIC X(26).
 
+       01  ws_sqlcode                  PIC -9(9).
+
        EXEC SQL INCLUDE SQLCA   END-EXEC.
        EXEC SQL INCLUDE RTLTRN  END-EXEC.
-      *EXEC SQL END-EXEC.
+       EXEC SQL
+           DECLARE rtl_trn_tbl_c CURSOR FOR
+               SELECT CUST_NO
+                 FROM RETAIL_TRANSN_TBL
+           END-EXEC.
 
        PROCEDURE DIVISION.                                              00040000
            DISPLAY "PNRE305  Version 1.02"
@@ -55,72 +107,140 @@
 
            PERFORM 2000_connect
 
-           IF ws_err_sts = 0
-               PERFORM 200_open_rtl_file
+           IF ws_pgm_err_sts = 0
+              PERFORM 300_open_print_file
            END-IF
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
+               PERFORM 400_print_hdr
+           END-IF
+
+           IF ws_pgm_err_sts = 0
+               PERFORM 200_oc_rtl_trn_tbl
+           END-IF
+
+           IF ws_pgm_err_sts = 0
                MOVE "N" TO rtl_eof_sts
-               PERFORM 1000_read_tran_rec
+               PERFORM 1000_fc_rtl_trn_tbl
            END-IF
 
-           IF ws_err_sts = 0
-              PERFORM 500_process_rtl_file
+           IF ws_pgm_err_sts = 0
+              PERFORM 500_process_rtl_tbl
                 UNTIL rtl_eof_sts = "Y"
-                   OR ws_err_sts  = 1
+                   OR ws_pgm_err_sts  = 1
            END-IF
 
-           PERFORM 700_close_files
+           IF ws_pgm_err_sts = 0
+               PERFORM 600_print_footer
+           END-IF
+
+           PERFORM 900_cc_rtl_trn_tbl
+
+           PERFORM 8000_close_transaction
+
+           PERFORM 9000_close_files
 
            STOP RUN                                                     00060000
            .
        1000_init.
            MOVE 0    TO return-code
-           MOVE 0    TO pgm_error_sts
-           MOVE "N"  TO ws_rtl_file_open_sts
+           MOVE 0    TO ws_pgm_err_sts
+           MOVE "N"  TO ws_rtl_tbl_open_sts
            .
 
-       200_open_rtl_file.
-           OPEN INPUT  rtl_file
-           if ws_file_sts = "00"
-               DISPLAY "Opened retail transaction file"
-               MOVE "Y" TO ws_rtl_file_open_sts
-           ELSE
-               MOVE 1 TO ws_err_sts
-               DISPLAY "error open rtl file. sts=" ws_file_sts
-           END-IF
-           .
+       200_oc_rtl_trn_tbl.
+           EXEC SQL
+               OPEN rtl_trn_tbl_c
+      *         CUST_NO
+           END-EXEC.
 
-       500_process_rtl_file.
-           PERFORM 2000_LOAD_rtl_rec
-
-           IF ws_err_sts = 0
-               PERFORM 1000_read_tran_rec
-           END-IF
-           .
-
-       700_close_files.
-           DISPLAY "closing files"
-
-           IF ws_rtl_file_open_sts = "Y"
-               CLOSE rtl_file
-           END-IF
-           .
-
-       1000_read_tran_rec.
-           READ rtl_file
-                AT END MOVE "Y" TO rtl_eof_sts
-           END-READ
-
-           EVALUATE ws_file_sts
-           WHEN "00"
-                  DISPLAY "read rec"
-                  ADD 1 TO ws_rtl_rec_cnt1
-           WHEN "10"
-                  DISPLAY "eof rtl rec"
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "Opened retail transaction tbl"
+               MOVE "Y" TO ws_rtl_tbl_open_sts
            WHEN OTHER
-                  DISPLAY "read rec sts=" ws_file_sts
-                  MOVE 1 TO ws_err_sts
+               MOVE 1 TO ws_pgm_err_sts
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "fc sqlcode=" ws_sqlcode
+           END-EVALUATE
+           .
+
+       300_open_print_file.
+           OPEN OUTPUT PRINT_FILE
+           IF ws_file_sts = "00"
+               MOVE "Y" TO ws_prt_file_open_sts
+           ELSE
+               MOVE 1 TO ws_pgm_err_sts
+               DISPLAY "error open prt file. sts=" ws_file_sts
+           END-IF
+           .
+
+       400_print_hdr.
+           MOVE ws_print_hdr_rec TO print_rec
+
+           PERFORM 2000_write_prt_rec
+           .
+
+       500_process_rtl_tbl.
+           PERFORM 2000_print_rtl_tbl_rec
+
+           IF ws_pgm_err_sts = 0
+               PERFORM 1000_fc_rtl_trn_tbl
+           END-IF
+           .
+
+       600_print_footer.
+           MOVE ws_rtl_rec_cnt1
+             TO rtl_rec_cnt OF ws_print_footer_rec
+           MOVE ws_print_footer_rec TO print_rec
+
+           PERFORM 2000_write_prt_rec
+           .
+
+       900_cc_rtl_trn_tbl.
+           EXEC SQL
+              CLOSE rtl_trn_tbl_c
+           END-EXEC.
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "rtl trn tbl closed"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
+           .
+
+       1000_fc_rtl_trn_tbl.
+           EXEC SQL
+               FETCH rtl_trn_tbl_c
+                INTO
+      *           DCLRETAIL_TRANSN_TBL
+      *          :seq-no
+      *         ,:ws_retail_sys_name
+      ***         ,:site-name
+      *         ,:transn-date
+      *         ,:transn-time
+               :cust-no
+      *         ,:sale-item
+      *         ,:sale-qty
+      *         ,:sale-price
+      *         ,,:ws_tmstamp
+
+           END-EXEC.
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "record fetched"
+               ADD 1 TO ws_rtl_rec_cnt1
+           WHEN 100
+               DISPLAY "eof rtl rec"
+               MOVE "Y" TO rtl_eof_sts
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+               MOVE 1 TO  ws_pgm_err_sts
            END-EVALUATE
            .
 
@@ -128,53 +248,56 @@
            DISPLAY "Connecting DB2"                                     00120008
            .
 
-       2000_load_rtl_rec.
+       2000_print_rtl_tbl_rec.
            DISPLAY "loading rtl rec"
 
-           MOVE cust_no   OF rtl_rec
-             TO cust-no   OF dclretail-transn-tbl
-           MOVE sale_item OF rtl_rec
-             TO sale-item OF dclretail-transn-tbl
-           MOVE sale_qty  OF rtl_rec
-             TO sale-qty  OF dclretail-transn-tbl
+           MOVE cust-no   OF dclretail-transn-tbl
+             TO cust_no   OF ws_print_tran_rec
+      *     MOVE sale_item OF dclretail-transn-tbl
+      *       TO sale-item OF ws_print_tran_rec
+      **     MOVE sale_qty  OF dclretail-transn-tbl
+      *       TO sale-qty  OF ws_print_tran_rec
 
-           MOVE retail_sys_name OF rtl_rec
-             TO ws_retail_sys_name
-           MOVE "2026-03-08 15:16:10.123" TO ws_tmstamp
+      *     MOVE retail_sys_name OF rtl_rec
+      *       TO ws_retail_sys_name
+      *     MOVE "2026-03-08 15:16:10.123" TO ws_tmstamp
 
+           PERFORM 2000_write_prt_rec
+           .
+
+       2000_write_prt_rec.
+           WRITE print_rec
+           IF ws_file_sts = "00"
+               DISPLAY "wrote rec"
+               CONTINUE
+           ELSE
+               DISPLAY "err write prt rec sts=" ws_file_sts
+               MOVE 1 TO ws_pgm_err_sts
+           END-IF
+           .
+
+       8000_close_transaction.
+           DISPLAY "Initiated Rollback"
            EXEC SQL
-               INSERT INTO RETAIL_TRANSN_TBL
-               (SEQ_NO
-               ,RETAIL_SYS_NAME
-               ,SITE_NAME
-               ,TRANSN_DATE
-               ,TRANSN_TIME
-               ,CUST_NO
-               ,SALE_ITEM
-               ,SALE_QTY
-               ,SALE_PRICE
-               ,REC_TMSTAMP
-               )
-               VALUES
-               (:seq-no
-               ,:ws_retail_sys_name
-               ,:site-name
-               ,:transn-date
-               ,:transn-time
-               ,:cust-no
-               ,:sale-item
-               ,:sale-qty
-               ,:sale-price
-               ,:ws_tmstamp
-               )
-           END-EXEC.
+               ROLLBACK
+           END-EXEC
 
            EVALUATE sqlcode
            WHEN 0
-               DISPLAY "record inserted"
+               DISPLAY "Transaction rolled back"
            WHEN OTHER
-               DISPLAY "sql error code=" sqlcode
-               MOVE 1 TO  ws_err_sts
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+      *         DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
            END-EVALUATE
+           .
+
+       9000_close_files.
+           DISPLAY "closing files"
+
+           IF ws_prt_file_open_sts = "Y"
+               CLOSE print_file
+           END-IF
            .
       * eof                                                            00130008
