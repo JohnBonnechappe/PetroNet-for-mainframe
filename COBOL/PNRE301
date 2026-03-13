@@ -1,6 +1,7 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID.    PNRE301.
        AUTHOR.        John Braddock.
+       DATE-WRITTEN.  13-Mar-2026.
       *
       *--------------------------------------------------
       * Name: Retail Transaction List
@@ -23,36 +24,26 @@
        FD  rtl_file
            RECORDING MODE F
            RECORD CONTAINS 80 CHARACTERS.
-       01 rtl_rec.
-          03  seq_nbr                  PIC 9(4).
-          03  sys_name                 PIC X(10).
-          03  site_name                PIC X(10).
-          03  transn_date              PIC X(8).
-          03  transn_time              PIC X(6).
-          03  cust_no                  PIC X(8).
-          03  sale_item                PIC X(10).
-          03  sale_qty                 PIC 9(4).
-          03  sale_price               PIC 9(7)V9(2).
-          03                           PIC X(11).
+       COPY RTLREC.
 
        FD  print_file
            RECORDING MODE F
-           RECORD CONTAINS 80 CHARACTERS.
-       01 print_rec                     PIC X(80).
+           RECORD CONTAINS 92 CHARACTERS.
+       01 print_rec                     PIC X(92).
 
        WORKING-STORAGE SECTION.
-       01  ws_err_sts                  PIC 9.
-       01  ws_file_sts                 PIC X(2).
+       01  ws_pgm_err_sts              PIC 9.
 
+       01  ws_file_sts                 PIC X(2).
        01  ws_rtl_file_open_sts        PIC X.
        01  ws_prt_file_open_sts        PIC X.
 
-       01  rtl_eof_sts                 PIC X.
+       01  ws_rtl_eof_sts              PIC X.
 
        01  ws_rtl_rec_cnt1             PIC 9(4) COMP.
 
        01  ws_print_hdr_rec.
-           03 seq_nbr                 PIC X(04) VALUE "Seq".
+           03 seq_no                  PIC X(04) VALUE "Seq".
            03                         PIC X     VALUE SPACE.
            03 sys_name                PIC X(10) VALUE "Sys".
            03                         PIC X     VALUE SPACE.
@@ -60,21 +51,25 @@
            03                         PIC X     VALUE SPACE.
            03 transn_date             PIC X(08) VALUE "Trn Dt".
            03                         PIC X     VALUE SPACE.
-           03 Transn_time             PIC X(06) VALUE "Trn Tm".
+           03 transn_time             PIC X(06) VALUE "Trn Tm".
+           03                         PIC X     VALUE SPACE.
+           03 transn_type             PIC x(04) VALUE "Type".
+           03                         PIC X     VALUE SPACE.
+           03 transn_method           PIC X(06) VALUE "Method".
            03                         PIC X     VALUE SPACE.
            03 cust_no                 PIC X(08) VALUE "Cust".
            03                         PIC X     VALUE SPACE.
            03 sale_item               PIC X(10) VALUE "Item".
-           03                         PIC X     VALUE SPACE.
+           03                         PIC X(04) VALUE SPACE.
            03 sale_qty                PIC X(04) VALUE "Qty".
-           03                         PIC X     VALUE SPACE.
+           03                         PIC X(02) VALUE SPACE.
            03 sale_price              PIC X(09) VALUE "Price".
-           03                         PIC X(03) VALUE SPACE.
+           03                         PIC X(01) VALUE SPACE.
 
        01  ws_print_tran_rec.
-           03 seq_nbr                 PIC Z(04).
+           03 seq_no                  PIC Z(04).
            03                         PIC X     VALUE SPACE.
-           03 sys_name                PIC X(10).
+           03 retail_sys_name         PIC X(10).
            03                         PIC X     VALUE SPACE.
            03 site_name               PIC X(10).
            03                         PIC X     VALUE SPACE.
@@ -82,6 +77,10 @@
            03                         PIC X     VALUE SPACE.
            03 Transn_time             PIC X(06).
            03                         PIC X     VALUE SPACE.
+           03 transn_type_code        PIC X.
+           03                         PIC X(4)  VALUE SPACE.
+           03 transn_payt_method_code PIC X.
+           03                         PIC X(6)  VALUE SPACE.
            03 cust_no                 PIC X(08).
            03                         PIC X     VALUE SPACE.
            03 sale_item               PIC X(10).
@@ -89,12 +88,14 @@
            03 sale_qty                PIC Z(03)9.
            03                         PIC X     VALUE SPACE.
            03 sale_price              PIC Z(06).99.
+           03 filler                  PIC X(16) VALUE SPACE.
 
        01 ws_print_footer_rec.
-           03                      PIC X(10) VALUE SPACES.
-           03                      PIC X(09) VALUE "Rtl recs=".
-           03 rtl_rec_cnt          PIC Z(3)9.
-           03                      PIC X(57) VALUE SPACES.
+           03                        PIC X(10) VALUE SPACES.
+           03                        PIC X(09) VALUE "Rtl recs=".
+           03 rtl_rec_cnt            PIC Z(3)9.
+           03                        PIC X(57) VALUE SPACES.
+           03                        PIC X(25) VALUE SPACES.
 
        PROCEDURE DIVISION.
        main.
@@ -102,41 +103,41 @@
 
            PERFORM 100_pgm_init
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
                PERFORM 200_open_rtl_file
            END-IF
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
               PERFORM 300_open_print_file
            END-IF
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
                PERFORM 400_print_hdr
            END-IF
 
-           IF ws_err_sts = 0
-               MOVE "N" TO rtl_eof_sts
+           IF ws_pgm_err_sts = 0
+               MOVE "N" TO ws_rtl_eof_sts
                PERFORM 1000_read_tran_rec
            END-IF
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
               PERFORM 500_process_rtl_file
-                UNTIL rtl_eof_sts = "Y"
-                   OR ws_err_sts  = 1
+                UNTIL ws_rtl_eof_sts = "Y"
+                   OR ws_pgm_err_sts  = 1
            END-IF
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
                PERFORM 600_print_footer
            END-IF
 
-           PERFORM 700_close_files
+           PERFORM 9000_close_files
 
       *    STOP RUN
            GOBACK
            .
 
        100_pgm_init.
-           MOVE 0    TO ws_err_sts
+           MOVE 0    TO ws_pgm_err_sts
            MOVE "N"  TO ws_rtl_file_open_sts
            MOVE "N"  TO ws_prt_file_open_sts
 
@@ -146,9 +147,10 @@
        200_open_rtl_file.
            OPEN INPUT  rtl_file
            if ws_file_sts = "00"
+               DISPLAY "Opened retail transaction file"
                MOVE "Y" TO ws_rtl_file_open_sts
            ELSE
-               MOVE 1 TO ws_err_sts
+               MOVE 1 TO ws_pgm_err_sts
                DISPLAY "error open rtl file. sts=" ws_file_sts
            END-IF
            .
@@ -158,7 +160,7 @@
            IF ws_file_sts = "00"
                MOVE "Y" TO ws_prt_file_open_sts
            ELSE
-               MOVE 1 TO ws_err_sts
+               MOVE 1 TO ws_pgm_err_sts
                DISPLAY "error open prt file. sts=" ws_file_sts
            END-IF
            .
@@ -174,7 +176,7 @@
            MOVE ws_print_tran_rec TO print_rec
            PERFORM 2000_write_prt_rec
 
-           IF ws_err_sts = 0
+           IF ws_pgm_err_sts = 0
                PERFORM 1000_read_tran_rec
            END-IF
            .
@@ -183,24 +185,13 @@
            MOVE ws_rtl_rec_cnt1
              TO rtl_rec_cnt OF ws_print_footer_rec
            MOVE ws_print_footer_rec TO print_rec
+
            PERFORM 2000_write_prt_rec
-           .
-
-       700_close_files.
-           DISPLAY "closing files"
-
-           IF ws_rtl_file_open_sts = "Y"
-               CLOSE rtl_file
-           END-IF
-
-           IF ws_prt_file_open_sts = "Y"
-               CLOSE print_file
-           END-IF
            .
 
        1000_read_tran_rec.
            READ rtl_file
-                AT END MOVE "Y" TO rtl_eof_sts
+                AT END MOVE "Y" TO ws_rtl_eof_sts
            END-READ
 
            EVALUATE ws_file_sts
@@ -211,7 +202,7 @@
                   DISPLAY "eof rtl rec"
            WHEN OTHER
                   DISPLAY "read rec sts=" ws_file_sts
-                  MOVE 1 TO ws_err_sts
+                  MOVE 1 TO ws_pgm_err_sts
            END-EVALUATE
            .
 
@@ -222,7 +213,19 @@
                CONTINUE
            ELSE
                DISPLAY "err write prt rec sts=" ws_file_sts
-               MOVE 1 TO ws_err_sts
+               MOVE 1 TO ws_pgm_err_sts
+           END-IF
+           .
+
+       9000_close_files.
+           DISPLAY "closing files"
+
+           IF ws_rtl_file_open_sts = "Y"
+               CLOSE rtl_file
+           END-IF
+
+           IF ws_prt_file_open_sts = "Y"
+               CLOSE print_file
            END-IF
            .
       * eof
