@@ -1,4 +1,4 @@
-IDENTIFICATION DIVISION.
+       IDENTIFICATION DIVISION.
        PROGRAM-ID.    PNDB101.
        AUTHOR.        John Braddock.
        DATE-WRITTEN.  14-Mar-2026.
@@ -24,7 +24,7 @@ IDENTIFICATION DIVISION.
        01  ws_cust_no                 PIC X(08).
 
        COPY "CUSTQREC"
-           REPLACING cust_enquiry_rec BY ws_cust_enquiry_rec.
+           REPLACING cust_acct_enquiry_rec BY ws_cust_acct_enquiry_rec.
 
        LINKAGE SECTION.
        01  jcl-parm.
@@ -37,11 +37,11 @@ IDENTIFICATION DIVISION.
 
            PERFORM 1000_init
 
-           IF jcl-parm-length = SPACES
+           IF jcl-parm-length = ZERO
                DISPLAY "No cust supplied"
                MOVE 1 TO ws_pgm_err_sts
            ELSE
-               MOVE jcl-cust-no TO cust-no OF ws_cust_acct_inq_rec
+               MOVE jcl-cust-no TO cust_no OF ws_cust_acct_enquiry_rec
            END-IF
 
            IF ws_pgm_err_sts = 0
@@ -50,7 +50,8 @@ IDENTIFICATION DIVISION.
 
            IF ws_pgm_err_sts = 0
                DISPLAY "called PNDB905"
-               DISPLAY "cust_name=" cust_name OF ws_cust_acct_inq_rec
+               DISPLAY "cust_name=" cust_name
+                    OF ws_cust_acct_enquiry_rec
            END-IF
 
            STOP RUN
@@ -65,7 +66,7 @@ IDENTIFICATION DIVISION.
       *     MOVE TO ws_cust_no
 
            CALL "PNDB905"
-               USING ws_cust_acct_inq_rec
+               USING ws_cust_acct_enquiry_rec
                RETURNING ws_rtn_sts
            END-CALL
 
