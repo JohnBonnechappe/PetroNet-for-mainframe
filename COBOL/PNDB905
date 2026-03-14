@@ -1,0 +1,62 @@
+IDENTIFICATION DIVISION.
+       PROGRAM-ID.    PNDB905.
+       AUTHOR.        John Braddock.
+       DATE-WRITTEN.  14-Mar-2026.
+      *
+      * Name: Customer Account Inquiry.
+      * Pgm to generate a customer acount enquiry record suitable
+      * for either a report or an online screen display.
+      *
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+       DATA DIVISION.
+       FILE SECTION.
+       WORKING-STORAGE SECTION.
+       01 dat1          PIC 9.
+
+       01  ws_rtn_sts   PIC 9.
+       LINKAGE SECTION.
+       COPY "CUSTQREC"
+           REPLACING cust_enquiry_rec BY ls_cust_enquiry_rec.
+
+       PROCEDURE DIVISION USING ls_cust_enquiry_rec
+                          RETURNING ws_rtn_sts.
+       main.
+           DISPLAY "PNDB905 Version 1.0"
+
+           PERFORM 1000_init
+
+           EXEC SQL
+           SELECT c.cust-name
+                , a.cust-current-debt
+                , a.cust-30-day-debt
+                , a.cust-settlement-discount
+                  INTO :ws-cust-name
+                     , :ws-cust-current-debt
+                     , :ws-cust-30-day-debt
+                     , :ws-cust-settlement-discount
+               FROM cust-tbl c
+                  , cust-acct-tbl a
+               WHERE c.cust-no = a.cust-no
+                 AND c.deleted-flag <> 'Y'
+                   ;
+           END-EXEC.
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "cust acct rec fnd"
+           WHEN 100
+               DISPLAY "cust acct rec NOT fnd"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "error. cust sqlcode=" ws_sqlcode
+           END-EVALUATE
+
+           GOBACK
+           .
+
+       1000_init.
+           MOVE 0    TO ws_pgm_err_sts
+           MOVE 0    TO ws_rtn_sts
+           .
