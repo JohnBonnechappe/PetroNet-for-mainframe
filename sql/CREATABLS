@@ -1,6 +1,9 @@
 --                                        
 -- Tables for the PetroNet system  ---              
--- for use in IBM ZXPLORE training ---                 
+-- for use in IBM ZXPLORE training ---  
+--
+-- Installation: IBM Z/OS ver 3.01.0    DB2 ver 12
+--
 -- John Braddock                                            
 -- February 2026                                
 --                                                       
