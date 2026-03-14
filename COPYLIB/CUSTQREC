@@ -2,7 +2,7 @@
       * Customer account enquiry record.
       * mostly obtained from CUST_ACCT_TBL.
       *
-       01  cust_enquiry_rec.
+       01  cust_acct_enquiry_rec.
            03  cust_no                   PIC X(08).
            03  cust_name                 PIC X(25).
            03  cust_current_debt         PIC S9(7)V9(2) COMP.
