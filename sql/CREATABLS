@@ -1,20 +1,21 @@
---                                                                      00010101
--- Tables for the PetroNet system  ---                                  00010202
--- for use in IBM ZXPLORE training ---                                  00010302
--- John Braddock                                                        00010402
--- February 2026                                                        00010502
---                                                                      00011001
---create table CUST_TBL                                                 00011102
---   ( CUST_NO                  char(8) 
---   , CUST_NAME                char(25)           
---   , REC_TMSTAMP              timestamp        
---   ) IN DATABASE Z63454;  
+--                                        
+-- Tables for the PetroNet system  ---              
+-- for use in IBM ZXPLORE training ---                 
+-- John Braddock                                            
+-- February 2026                                
+--                                                       
+  create table CUST-TBL                                    
+     ( CUST-NO                  char(8) 
+     , CUST-NAME                char(25) 
+     , CUST-DELETED-FLAG        char(1)
+     , REC-TMSTAMP              timestamp        
+     ) IN DATABASE Z63454;  
 
     CREATE TABLE CUST-ACCT-TBL
      ( CUST-NO                    CHAR(8)
      , CUST-CURRENT-DEBT          decimal(9,2)
      , CUST-30-DAY-DEBT           decimal(9,2)
-     , SETTLEMENT-DISCOUNT        decimal(9,2)
+     , CUST-SETTLEMENT-DISCOUNT   decimal(9,2)
      , REC_TMSTAMP                timestamp 
     ) in database Z63454;   
 
@@ -27,17 +28,18 @@
     ,
     ) IN DATABASE Z63454;
 --                                                      
---create table LOCN_TBL                                            
---   ( LOCN_NO                char(4)                              
---   , LOCN_NAME              char(25)                         
---   , REC_TMSTAMP            timestamp                           
---   ) IN DATABASE Z63454;                                    
+  create table LOCN_TBL                                            
+     ( LOCN_NO                char(4)                              
+     , LOCN_NAME              char(25)                         
+     , REC_TMSTAMP            timestamp                           
+     ) IN DATABASE Z63454;                                    
 --                                                        
---create table PROD_TBL                                       
---   ( PROD_NO            char(6)              
---   , PROD_DESC          char(25)                           
---   , REC_TMSTAMP        timestamp               
---   ) IN DATABASE Z63454; 
+  create table PROD_TBL                                       
+     ( PROD_NO            char(6)              
+     , PROD_DESC          char(25)
+     , PROD-DELETED-FLAG  char(1)
+     , REC_TMSTAMP        timestamp               
+     ) IN DATABASE Z63454; 
 
 create table PACK-TBL
      ) PACK_CODE          char(4)
@@ -81,4 +83,4 @@ create table STOCK_HOLDING_TBL
     ,SALE_PRICE              decimal(9,2)
     ,SALE_TOTAL              decimal(9,2)
     ,REC_TMSTAMP             timestamp
-    ) IN DATABASE Z63454;                                                                00080001
+    ) IN DATABASE Z63454;                        
