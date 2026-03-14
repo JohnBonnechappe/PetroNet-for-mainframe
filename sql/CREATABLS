@@ -8,10 +8,10 @@
 -- February 2026                                
 --                                                       
   create table CUST-TBL                                    
-     ( CUST-NO                  char(8) 
-     , CUST-NAME                char(25) 
-     , CUST-DELETED-FLAG        char(1)
-     , REC-TMSTAMP              timestamp        
+     ( CUST-NO                    char(8) 
+     , CUST-NAME                  char(25) 
+     , DELETED-FLAG               char(1)
+     , REC-TMSTAMP                timestamp        
      ) IN DATABASE Z63454;  
 
     CREATE TABLE CUST-ACCT-TBL
@@ -23,50 +23,51 @@
     ) in database Z63454;   
 
     CREATE TABLE DEBTOR-TRANSN-TBL
-    ( CUST-NO                    CHAR(8)
-    , DEBTOR_TRANSN_TYPE_CODE    CHAR(1)
-    , TRANSN_DATE                timestamp
-    , TRANSN_QTY                 decimal(9,2)
-    , REC_TMSTAMP                timestamp
+    ( CUST-NO                     CHAR(8)
+    , DEBTOR-TRANSN-TYPE-CODE     CHAR(1)
+    , TRANSN-DATE                 timestamp
+    , TRANSN-QTY                  decimal(9,2)
+    , REC-TMSTAMP                 timestamp
     ,
     ) IN DATABASE Z63454;
 --                                                      
-  create table LOCN_TBL                                            
-     ( LOCN_NO                char(4)                              
-     , LOCN_NAME              char(25)                         
-     , REC_TMSTAMP            timestamp                           
+  create table LOCN-TBL                                            
+     ( LOCN-NO                   char(4)                              
+     , LOCN-NAME                 char(25)                         
+     , REC-TMSTAMP               timestamp                           
      ) IN DATABASE Z63454;                                    
 --                                                        
-  create table PROD_TBL                                       
-     ( PROD_NO            char(6)              
-     , PROD_DESC          char(25)
-     , PROD-DELETED-FLAG  char(1)
-     , REC_TMSTAMP        timestamp               
+  create table PROD-TBL                                       
+     ( PROD-NO                   char(6)              
+     , PROD-DESC                 char(25)
+     , DELETED-FLAG              char(1)
+     , REC-TMSTAMP               timestamp               
      ) IN DATABASE Z63454; 
 
 create table PACK-TBL
-     ) PACK_CODE          char(4)
-     , PACK_DESC          char(25)
-     , REC_TMSTAMP        timestamp   
+     ) PACK_CODE                char(4)
+     , PACK_DESC                char(25)
+     , DELETED-FLAG             char(1)
+     , REC_TMSTAMP              timestamp   
      ) IN DATABASE Z63454; 
                                         
 --                                            
 create table STOCK_HOLDING_TBL                       
-    ( LOCN_NO             char(4)                         
-    , PROD_NO             char(6)
-    , PACK_CODE           char(4)                        
-    , ON_HAND_QTY         integer                              
-    , ON_ORDER_QTY        integer                              
-    , REC_TMSTAMP         timestamp                              
+    ( LOCN_NO                  char(4)                         
+    , PROD_NO                  char(6)
+    , PACK_CODE                char(4)                        
+    , ON_HAND_QTY              integer                              
+    , ON_ORDER_QTY             integer                              
+    , REC_TMSTAMP              timestamp                              
     ) IN DATABASE Z63454;
 
     create table STOCK-TRANSN-TBL
-    ( LOCN-NO            Char(4)     
-    , PROD-NO            Char(6)
-    , PACK-CODE          Char(4)
-    , TRANSN-TYPE-CODE   Char(1)
-    , STOCK-TRANSN-QTY   Integer
-   ,  REC_TMSTAMP        timestamp   
+    ( LOCN-NO                 Char(4)     
+    , PROD-NO                 Char(6)
+    , PACK-CODE               Char(4)
+    , TRANSN-TYPE-CODE        Char(1)
+    , STOCK-TRANSN-QTY        Integer
+   ,  REC_TMSTAMP             timestamp   
     ) IN DATABASE Z63454
     ;
 
