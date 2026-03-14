@@ -5,42 +5,80 @@
 -- February 2026                                                        00010502
 --                                                                      00011001
 --create table CUST_TBL                                                 00011102
---   ( CUST_NO      char(8)                                             00011202
---   , CUST_NAME    char(25)                                            00011302
---   , REC_TMSTAMP  timestamp                                           00011402
---   );                                                                 00011502
---                                                                      00011602
---create table LOCN_TBL                                                 00012002
---   ( LOCN_NO      char(4)                                             00013003
---   , LOCN_NAME    char(25)                                            00014003
---   , REC_TMSTAMP  timestamp                                           00014103
---   );                                                                 00015002
---                                                                      00020001
---create table PROD_TBL                                                 00020102
---   ( PROD_NO      char(6)                                             00020202
---   , PROD_DESC    char(25)                                            00020302
---   , REC_TMSTAMP  timestamp                                           00020402
---   );                                                                 00020502
---                                                                      00021002
-create table STOCK_HOLDING_TBL                                          00030001
-    ( LOCN_NO       char(4)                                             00040002
-    , PROD_NO       char(6)                                             00050002
-    , ON_HAND_QTY   integer                                             00060002
-    , ON_ORDER_QTY  integer                                             00061002
-    , REC_TMSTAMP   timestamp                                           00070002
-    );
+--   ( CUST_NO                  char(8) 
+--   , CUST_NAME                char(25)           
+--   , REC_TMSTAMP              timestamp        
+--   ) IN DATABASE Z63454;  
 
-CREATE RETAIL_TRANSN_TBL
-    (SEQ_NO            SMALLINT
-    ,RETAIL_SYS_NAME   CHAR(10)
-    ,SITE_NAME         CHAR(10)
-    ,TRANSN_DATE       CHAR(8)
-    ,TRANSN_TIME       CHAR(6)
-    ,CUST_NO           CHAR(8)
-    ,SALE_ITEM         CHAR(10)
-    ,SALE_QTY          SMALLINT
-    ,SALE_PRICE        DECIMAL(9,2)
-    ,REC_TMSTAMP       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    IN Z63454
+    CREATE TABLE CUST-ACCT-TBL
+     ( CUST-NO                    CHAR(8)
+     , CUST-CURRENT-DEBT          decimal(9,2)
+     , CUST-30-DAY-DEBT           decimal(9,2)
+     , SETTLEMENT-DISCOUNT        decimal(9,2)
+     , REC_TMSTAMP                timestamp 
+    ) in database Z63454;   
+
+    CREATE TABLE DEBTOR-TRANSN-TBL
+    ( CUST-NO                    CHAR(8)
+    , DEBTOR_TRANSN_TYPE_CODE    CHAR(1)
+    , TRANSN_DATE                timestamp
+    , TRANSN_QTY                 decimal(9,2)
+    , REC_TMSTAMP                timestamp
+    ,
+    ) IN DATABASE Z63454;
+--                                                      
+--create table LOCN_TBL                                            
+--   ( LOCN_NO                char(4)                              
+--   , LOCN_NAME              char(25)                         
+--   , REC_TMSTAMP            timestamp                           
+--   ) IN DATABASE Z63454;                                    
+--                                                        
+--create table PROD_TBL                                       
+--   ( PROD_NO            char(6)              
+--   , PROD_DESC          char(25)                           
+--   , REC_TMSTAMP        timestamp               
+--   ) IN DATABASE Z63454; 
+
+create table PACK-TBL
+     ) PACK_CODE          char(4)
+     , PACK_DESC          char(25)
+     , REC_TMSTAMP        timestamp   
+     ) IN DATABASE Z63454; 
+                                        
+--                                            
+create table STOCK_HOLDING_TBL                       
+    ( LOCN_NO             char(4)                         
+    , PROD_NO             char(6)
+    , PACK_CODE           char(4)                        
+    , ON_HAND_QTY         integer                              
+    , ON_ORDER_QTY        integer                              
+    , REC_TMSTAMP         timestamp                              
+    ) IN DATABASE Z63454;
+
+    create table STOCK-TRANSN-TBL
+    ( LOCN-NO            Char(4)     
+    , PROD-NO            Char(6)
+    , PACK-CODE          Char(4)
+    , TRANSN-TYPE-CODE   Char(1)
+    , STOCK-TRANSN-QTY   Integer
+   ,  REC_TMSTAMP        timestamp   
+    ) IN DATABASE Z63454
     ;
+
+
+    create table RETAIL_TRANSN_TBL
+    (SEQ_NO                  smallint
+    ,SYS_NAME                char(10)
+    ,SITE_NAME               char(10)
+    ,TRANSN_DATE             char(08)
+    ,TRANSN_TIME             char(06)
+    ,TRANSN_TYPE_CODE        char(1)
+    ,TRANSN_PAYT_METHOD_CODE char(1)
+    ,TRASN_APPLIED_INDIC     char(1)
+    ,CUST_NO                 char(08)
+    ,SALE_ITEM               char(10)
+    ,SALE_QTY                smallint
+    ,SALE_PRICE              decimal(9,2)
+    ,SALE_TOTAL              decimal(9,2)
+    ,REC_TMSTAMP             timestamp
+    ) IN DATABASE Z63454;                                                                00080001
