@@ -1,5 +1,10 @@
 -- Examples of altering a table definition
+-- for use in IBM ZXPLORE training ---  
 --
+-- Installation: IBM Z/OS ver 3.01.0    DB2 ver 12
+--
+-- John Braddock 
+-- 20 March 2026
 --
 
 ALTER TABLE Z63454.STK_TRANSN_TBL              
@@ -8,4 +13,7 @@ ALTER TABLE Z63454.STK_TRANSN_TBL
    ADD COLUMN   TRANSN_TYPE_CODE  CHAR(1)               
    ADD COLUMN   STOCK_TRANSN_QTY  INTEGER     
    ADD COLUMN   REC_TMSTAMP       TIMESTAMP
+   ;
+
+ALTER TABLE Z63454.CUST_ACCT_TBL
    ;
