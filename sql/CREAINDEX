@@ -1,3 +1,13 @@
+--                                        
+-- Indexes for the PetroNet system  ---              
+-- for use in IBM ZXPLORE training ---  
+--
+-- Installation: IBM Z/OS ver 3.01.0    DB2 ver 12
+--
+-- John Braddock                                            
+-- 20 March 2026                                
+--     
+
 CREATE INDEX DEBTOR_TRANSN_I1
     ON Z63454.DEBTOR_TRANSN_TBL
       (CUST_NO)
