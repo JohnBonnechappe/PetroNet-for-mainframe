@@ -7,44 +7,44 @@
 -- John Braddock                                            
 -- February 2026                                
 --                                                       
-  create table CUST-TBL                                    
-     ( CUST-NO                    char(8) 
-     , CUST-NAME                  char(25) 
-     , DELETED-FLAG               char(1)
-     , REC-TMSTAMP                timestamp        
+  create table CUST_TBL                                    
+     ( CUST_NO                    char(8) 
+     , CUST_NAME                  char(25) 
+     , DELETED_FLAG               char(1)
+     , REC_TMSTAMP                timestamp        
      ) IN DATABASE Z63454;  
 
-    CREATE TABLE CUST-ACCT-TBL
-     ( CUST-NO                    CHAR(8)
-     , CUST-CURRENT-DEBT          decimal(9,2)
-     , CUST-30-DAY-DEBT           decimal(9,2)
-     , CUST-SETTLEMENT-DISCOUNT   decimal(9,2)
+    CREATE TABLE CUST_ACCT_TBL
+     ( CUST_NO                    CHAR(8)
+     , CUST_CURRENT_DEBT          decimal(9,2)
+     , CUST_30-DAY_DEBT           decimal(9,2)
+     , CUST_SETTLEMENT_DISCOUNT   decimal(9,2)
      , REC_TMSTAMP                timestamp 
     ) in database Z63454;   
 
-    CREATE TABLE DEBTOR-TRANSN-TBL
-    ( CUST-NO                     CHAR(8)
-    , DEBTOR-TRANSN-TYPE-CODE     CHAR(1)
-    , TRANSN-DATE                 timestamp
-    , TRANSN-QTY                  decimal(9,2)
-    , REC-TMSTAMP                 timestamp
+    CREATE TABLE DEBTOR_TRANSN_TBL
+    ( CUST_NO                     CHAR(8)
+    , DEBTOR_TRANSN_TYPE_CODE     CHAR(1)
+    , TRANSN_DATE                 timestamp
+    , TRANSN_QTY                  decimal(9,2)
+    , REC_TMSTAMP                 timestamp
     ,
     ) IN DATABASE Z63454;
 --                                                      
-  create table LOCN-TBL                                            
-     ( LOCN-NO                   char(4)                              
-     , LOCN-NAME                 char(25)                         
-     , REC-TMSTAMP               timestamp                           
+  create table LOCN_TBL                                            
+     ( LOCN_NO                   char(4)                              
+     , LOCN_NAME                 char(25)                         
+     , REC_TMSTAMP               timestamp                           
      ) IN DATABASE Z63454;                                    
 --                                                        
-  create table PROD-TBL                                       
-     ( PROD-NO                   char(6)              
-     , PROD-DESC                 char(25)
-     , DELETED-FLAG              char(1)
-     , REC-TMSTAMP               timestamp               
+  create table PROD_TBL                                       
+     ( PROD_NO                   char(6)              
+     , PROD_DESC                 char(25)
+     , DELETED_FLAG              char(1)
+     , REC_TMSTAMP               timestamp               
      ) IN DATABASE Z63454; 
 
-create table PACK-TBL
+create table PACK_TBL
      ) PACK_CODE                char(4)
      , PACK_DESC                char(25)
      , DELETED-FLAG             char(1)
@@ -61,12 +61,12 @@ create table STOCK_HOLDING_TBL
     , REC_TMSTAMP              timestamp                              
     ) IN DATABASE Z63454;
 
-    create table STOCK-TRANSN-TBL
-    ( LOCN-NO                 Char(4)     
-    , PROD-NO                 Char(6)
-    , PACK-CODE               Char(4)
-    , TRANSN-TYPE-CODE        Char(1)
-    , STOCK-TRANSN-QTY        Integer
+    create table STOCK_TRANSN_TBL
+    ( LOCN_NO                 Char(4)     
+    , PROD_NO                 Char(6)
+    , PACK_CODE               Char(4)
+    , TRANSN_TYPE_CODE        Char(1)
+    , STOCK_TRANSN_QTY        Integer
    ,  REC_TMSTAMP             timestamp   
     ) IN DATABASE Z63454
     ;
