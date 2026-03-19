@@ -1,0 +1,11 @@
+-- Examples of altering a table definition
+--
+--
+
+ALTER TABLE Z63454.STK_TRANSN_TBL              
+   ADD COLUMN   PROD_NO           CHAR(6)          
+   ADD COLUMN   PACK_CODE         CHAR(4)               
+   ADD COLUMN   TRANSN_TYPE_CODE  CHAR(1)               
+   ADD COLUMN   STOCK_TRANSN_QTY  INTEGER     
+   ADD COLUMN   REC_TMSTAMP       TIMESTAMP
+   ;
