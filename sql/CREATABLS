@@ -28,7 +28,6 @@
     , TRANSN_DATE                 timestamp
     , TRANSN_QTY                  decimal(9,2)
     , REC_TMSTAMP                 timestamp
-    ,
     ) IN DATABASE Z63454;
 --                                                      
   create table LOCN_TBL                                            
@@ -67,24 +66,24 @@ create table STOCK_HOLDING_TBL
     , PACK_CODE               Char(4)
     , TRANSN_TYPE_CODE        Char(1)
     , STOCK_TRANSN_QTY        Integer
-   ,  REC_TMSTAMP             timestamp   
+    , REC_TMSTAMP             timestamp   
     ) IN DATABASE Z63454
     ;
 
 
     create table RETAIL_TRANSN_TBL
-    (SEQ_NO                  smallint
-    ,SYS_NAME                char(10)
-    ,SITE_NAME               char(10)
-    ,TRANSN_DATE             char(08)
-    ,TRANSN_TIME             char(06)
-    ,TRANSN_TYPE_CODE        char(1)
-    ,TRANSN_PAYT_METHOD_CODE char(1)
-    ,TRASN_APPLIED_INDIC     char(1)
-    ,CUST_NO                 char(08)
-    ,SALE_ITEM               char(10)
-    ,SALE_QTY                smallint
-    ,SALE_PRICE              decimal(9,2)
-    ,SALE_TOTAL              decimal(9,2)
-    ,REC_TMSTAMP             timestamp
+    ( SEQ_NO                  smallint
+    , SYS_NAME                char(10)
+    , SITE_NAME               char(10)
+    , TRANSN_DATE             char(08)
+    , TRANSN_TIME             char(06)
+    , TRANSN_TYPE_CODE        char(1)
+    , TRANSN_PAYT_METHOD_CODE char(1)
+    , TRASN_APPLIED_INDIC     char(1)
+    , CUST_NO                 char(08)
+    , SALE_ITEM               char(10)
+    , SALE_QTY                smallint
+    , SALE_PRICE              decimal(9,2)
+    , SALE_TOTAL              decimal(9,2)
+    , REC_TMSTAMP             timestamp
     ) IN DATABASE Z63454;                        
