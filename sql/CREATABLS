@@ -9,7 +9,9 @@
 --                                                       
   create table CUST_TBL                                    
      ( CUST_NO                    char(8) 
-     , CUST_NAME                  char(25) 
+     , CUST_NAME                  char(25)
+     , CUST_ADDR                  char(25)
+     , CUST_PHONE                 char(15)
      , DELETED_FLAG               char(1)
      , REC_TMSTAMP                timestamp        
      ) IN DATABASE Z63454;  
