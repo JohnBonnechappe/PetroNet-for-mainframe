@@ -1,0 +1,13 @@
+//LISTCAT1 JOB 1,JOHNB,TIME=(1,1),NOTIFY=&SYSUID
+//*
+//* Use IDCAMS to list datasets
+//* Brief listing version.
+//* NOTE: change the in stream data to list datasets desired
+//*
+//STEP01  EXEC PGM=IDCAMS
+//SYSPRINT    DD SYSOUT=*
+//SYSIN       DD *
+  LISTCAT ENTRIES(Z63454.EXAMPLES.*)
+  IF MAXCC = 8 THEN SET MAXCC = 0
+/*
+//*EOF
