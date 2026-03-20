@@ -1,0 +1,17 @@
+Some notes and tips for developing in ZOS COBOL DB2 CICS
+
+John Braddock
+March 2026
+
+
+The ISPF DCLGEN screen (ISPF option D2 2).
+This screen will generate a copybook member for a DB2 tablein an existing PDS suitable for copy into a COBOL program
+
+Used only occasionally, this screenshot is a useful reminder of how to generate a copybook for a database table.
+
+<screen image here>
+
+Important points to note are
+    a) the dataset member name which is limited to 8 characters
+    b) change the action to REPLACE if the copybook already exists
+    c) give the structure a name, otherwise DCLGEN just prefixes the 01 level with "DCL"
