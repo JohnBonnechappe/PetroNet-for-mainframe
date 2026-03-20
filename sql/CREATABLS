@@ -17,7 +17,8 @@
     CREATE TABLE CUST_ACCT_TBL
      ( CUST_NO                    CHAR(8)
      , CUST_CURRENT_DEBT          decimal(9,2)
-     , CUST_30-DAY_DEBT           decimal(9,2)
+     , CUST_30_DAY_DEBT           decimal(9,2)
+     , CUST_60_DAY_DEBT           decimal(9,2)
      , CUST_SETTLEMENT_DISCOUNT   decimal(9,2)
      , REC_TMSTAMP                timestamp 
     ) in database Z63454;   
