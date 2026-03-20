@@ -7,5 +7,8 @@
            03  cust_name                 PIC X(25).
            03  cust_current_debt         PIC S9(7)V9(2) COMP.
            03  cust_30_day_debt          PIC S9(9)V9(2) COMP.
+           03  cust_60_day_debt          PIC S9(9)V9(2) COMP.
            03  cust_settlement_discount  PIC S9(7)V9(2) COMP.
+           03  cust_vol_rebate           PIC S9(7)V9(2) COMP.
+           03  cust_pay_now_amt          PIC S9(7)V9(2) COMP.
       *
