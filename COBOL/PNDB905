@@ -1,7 +1,7 @@
-IDENTIFICATION DIVISION.
+       IDENTIFICATION DIVISION.
        PROGRAM-ID.    PNDB905.
        AUTHOR.        John Braddock.
-       DATE-WRITTEN.  14-Mar-2026.
+       DATE-WRITTEN.  20-Mar-2026.
       *
       * Name: Customer Account Inquiry.
       * Pgm to generate a customer acount enquiry record suitable
@@ -13,33 +13,64 @@ IDENTIFICATION DIVISION.
        DATA DIVISION.
        FILE SECTION.
        WORKING-STORAGE SECTION.
+       01 ws_pgm_err_sts   PIC 9.
        01 dat1          PIC 9.
 
-       01  ws_rtn_sts   PIC 9.
+
+       01  ws_sqlcode                  PIC -9(9).
+
+       EXEC SQL INCLUDE SQLCA   END-EXEC.
+
+       EXEC SQL INCLUDE CUSTTBL END-EXEC.
+       EXEC SQL INCLUDE CSTACCT END-EXEC.
+
        LINKAGE SECTION.
        COPY "CUSTQREC"
-           REPLACING cust_enquiry_rec BY ls_cust_enquiry_rec.
+           REPLACING cust_acct_enquiry_rec BY ls_cust_acct_enquiry_rec.
 
-       PROCEDURE DIVISION USING ls_cust_enquiry_rec
-                          RETURNING ws_rtn_sts.
+       01  ls_rtn_sts   PIC 9.
+
+       PROCEDURE DIVISION USING ls_cust_acct_enquiry_rec
+                          RETURNING ls_rtn_sts.
        main.
            DISPLAY "PNDB905 Version 1.0"
 
            PERFORM 1000_init
 
+           PERFORM 2000_get_cust_acct_dtls
+
+           PERFORM 9000_close_transaction
+
+           IF ws_pgm_err_sts = 0
+               PERFORM 3000_populate_enquiry_rec
+           END-IF
+
+           EXIT PROGRAM
+           .
+
+       1000_init.
+           MOVE 0    TO ws_pgm_err_sts
+           MOVE 0    TO ls_rtn_sts
+           .
+
+       2000_get_cust_acct_dtls.
            EXEC SQL
-           SELECT c.cust-name
-                , a.cust-current-debt
-                , a.cust-30-day-debt
-                , a.cust-settlement-discount
-                  INTO :ws-cust-name
-                     , :ws-cust-current-debt
-                     , :ws-cust-30-day-debt
-                     , :ws-cust-settlement-discount
-               FROM cust-tbl c
-                  , cust-acct-tbl a
-               WHERE c.cust-no = a.cust-no
-                 AND c.deleted-flag <> 'Y'
+               SELECT c.cust_name
+                    , a.cust_current-debt
+                    , a.cust_30_day_debt
+                    , a.cust_60_day_debt
+                    , a.cust_settlement_discount
+                    , a.cust_vol_rebate
+                 INTO :cust-name                OF cust_rec
+                    , :cust-current-debt        OF cust-acct-rec
+                    , :cust-30-day-debt         OF cust-acct-rec
+                    , :cust-60-day-debt         OF cust-acct-rec
+                    , :cust-settlement-discount OF cust-acct-rec
+                    , :cust_vol_rebate          OF cust-acct-rec
+                 FROM cust_tbl c
+                    , cust_acct_tbl a
+                WHERE c.cust_no = a.cust_no
+                  AND c.deleted_flag NOT = 'Y'
                    ;
            END-EXEC.
 
@@ -49,14 +80,46 @@ IDENTIFICATION DIVISION.
            WHEN 100
                DISPLAY "cust acct rec NOT fnd"
            WHEN OTHER
+               MOVE 1 TO ws_pgm_err_sts
+               MOVE 1 TO ls_rtn_sts
                MOVE sqlcode TO ws_sqlcode
                DISPLAY "error. cust sqlcode=" ws_sqlcode
            END-EVALUATE
-
-           GOBACK
            .
 
-       1000_init.
-           MOVE 0    TO ws_pgm_err_sts
-           MOVE 0    TO ws_rtn_sts
+       3000_populate_enquiry_rec.
+               MOVE cust-name          OF cust_tbl
+                 TO cust_name          OF ls_cust_acct_enquiry_rec
+               MOVE cust-current-debt  OF cust-acct-tbl
+                 TO cust_current_debt  OF  ls_cust_acct_enquiry_rec
+
+               COMPUTE cust_pay_now_amt OF ls_cust_acct_enquiry_rec
+                     = cust-current-debt        OF cust-acct-tbl
+                     + cust-30-day-debt         OF cust-acct-tbl
+                     + cust-60-day-debt         OF cust-acct-tbl
+                     - cust-vol-rebate          OF cust-acct-tbl
+                     - cust-settlement-discount OF cust-acct-tbl
+               ON SIZE ERROR
+                   MOVE 1 TO ws_pgm_err_sts
+                   MOVE 2 TO ls_rtn_sts
+               END-COMPUTE
            .
+
+       9000_CLOSE_TRANSACTION.
+           DISPLAY "Initiated Rollback"
+           EXEC SQL
+               ROLLBACK
+           END-EXEC
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "Transaction rolled back"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+      *         DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
+           .
+           .
+      *eof
