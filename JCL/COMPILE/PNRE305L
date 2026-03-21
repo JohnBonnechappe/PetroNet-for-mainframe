@@ -17,7 +17,7 @@
 //* Now compile put obj file into &&loadset
 //*------------------------------------------------------------
 //*
-//STEP02       EXEC  PGM=IGYCRCTL,REGION=0M,PARM='SQL'
+//STEP02       EXEC  PGM=IGYCRCTL,REGION=0M,PARM=(NODYNAM,SQL)
 //STEPLIB        DD  DSN=IGY640.SIGYCOMP,DISP=SHR
 //               DD  DSN=DSND10.DBDG.SDSNEXIT,DISP=SHR
 //               DD  DSN=DSND10.SDSNLOAD,DISP=SHR
@@ -54,11 +54,15 @@
 //             IF RC <=4 THEN
 //STEP03       EXEC PGM=IEWBLINK,COND=(8,LT,STEP02),REGION=0M
 //SYSLIB          DD  DSN=CEE.SCEELKED,DISP=SHR
+//                DD  DSN=CEE.SCEELKEX,DISP=SHR
+//                DD  DSN=DSND10.DBDG.SDSNEXIT,DISP=SHR
 //                DD  DSN=DSND10.SDSNLOAD,DISP=SHR
 //SYSPRINT        DD  SYSOUT=*
 //SYSUT1          DD  UNIT=SYSALLDA,SPACE=(CYL,(1,1))
 //SYSLIN          DD  DSN=&&LOADSET,DISP=(OLD,DELETE)
 //SYSLMOD         DD  DSN=&SYSUID..PETRONET.LOAD(PNRE305),DISP=SHR
+//SYSIN           DD *
+  INCLUDE SYSLIB(DSNALI)
 //             ENDIF
 //*
 //*------------------------------------------------------------
@@ -67,6 +71,7 @@
 //             IF RC <=4 THEN
 //BIND         EXEC PGM=IKJEFT01
 //STEPLIB         DD DSN=DSND10.SDSNLOAD,DISP=SHR
+//                DD DSN=DSND10.SDSNLOD2,DISP=SHR
 //DBRMLIB         DD DSN=&SYSUID..PETRONET.DBRMLIB,
 //        DISP=SHR
 //SYSUDUMP        DD DUMMY
