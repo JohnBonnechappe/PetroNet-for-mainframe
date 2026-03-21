@@ -3,9 +3,11 @@
 //* Run Apply Retail Transactions to customers & stocks.
 //* This applies retail transactions from the RETAIL_TRANSN_TBL.
 //* COBOL program PNRE306
+//* Z63454.O.LOA,=HR6
 //*
 //STEP01   EXEC  PGM=IKJEFT01
 //STEPLIB      DD  DSNAME=DSND10.SDSNLOAD,DISP=SHR
+//             DD  DSNAME=DSND10.SDSNLOD2,DISP=SHR
 //RTLFILE      DD  DSNAME=Z63454.PETRONET.RETAIL(RTLTRAN1),DISP=SHR
 //SYSOUT       DD  SYSOUT=*
 //SYSPRINT     DD  SYSOUT=*
