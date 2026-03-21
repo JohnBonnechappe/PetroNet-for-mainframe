@@ -1,4 +1,4 @@
-//PNRE302L  JOB 1,JOHNB,TIME=(1,1),NOTIFY=&SYSUID
+//PNRE305L  JOB 1,JOHNB,TIME=(1,1),NOTIFY=&SYSUID
 //*
 //* Compile and link PNRE305
 //* COBOL program for Retail Transaction List for customer
