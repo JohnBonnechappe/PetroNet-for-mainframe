@@ -12,6 +12,7 @@
      , CUST_NAME                  char(25)
      , CUST_ADDR                  char(25)
      , CUST_PHONE                 char(15)
+     , CUST_EMAIL                 char(25)
      , DELETED_FLAG               char(1)
      , REC_TMSTAMP                timestamp        
      ) IN DATABASE Z63454;  
@@ -30,7 +31,7 @@
     ( CUST_NO                     CHAR(8)
     , DEBTOR_TRANSN_TYPE_CODE     CHAR(1)
     , TRANSN_DATE                 timestamp
-    , TRANSN_QTY                  decimal(9,2)
+    , TRANSN_AMT                  decimal(9,2)
     , REC_TMSTAMP                 timestamp
     ) IN DATABASE Z63454;
 --                                                      
