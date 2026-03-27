@@ -15,6 +15,13 @@ ALTER TABLE Z63454.STK_TRANSN_TBL
    ADD COLUMN   REC_TMSTAMP       TIMESTAMP
    ;
 
+ALTER TABLE stock_transn_tbl
+ ALTER COLUMN transn_type_code
+   SET DATA TYPE CHAR(2);
+
+ALTER TABLE stock_transn_tbl
+ RENAME COLUMN transn_type_code TO stock_transn_type_code;
+
 ALTER TABLE Z63454.CUST_ACCT_TBL
     RENAME COLUMN  AMT_OUTSTANDING  TO  CUST_OUTSTANDING_DEBT
     ADD COLUMN     CUST_30_DAY_DEBT           decimal(9,2)
