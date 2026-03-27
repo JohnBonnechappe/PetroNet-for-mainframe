@@ -123,7 +123,8 @@ create table STOCK_HOLDING_TBL
     ) IN DATABASE Z63454;  
 
     create table RETAIL_SALES_DKT_TBL
-    , LOCN_NO                 char(4)
+    ( LOCN_NO                 char(4)
+    , CUST_NO                 char(6)
     , SALE_ITEM               char(10)
     , TRANSN_DATE             date
     , SALE_TOTAL              decimal(9,2)
