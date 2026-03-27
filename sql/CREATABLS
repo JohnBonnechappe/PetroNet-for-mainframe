@@ -13,6 +13,10 @@
      , CUST_ADDR                  char(25)
      , CUST_PHONE                 char(15)
      , CUST_EMAIL                 char(25)
+     , GENERAL_REBATE_FLAG        char(1)
+     , CASH_REBATE_FLAG           char(1)
+     , VOLUME_REBATE_FLAG         char(1)
+     , SETTLEMENT_DISCOUNT_FLAG   char(1)
      , DELETED_FLAG               char(1)
      , REC_TMSTAMP                timestamp        
      ) IN DATABASE Z63454;  
@@ -22,10 +26,25 @@
      , CUST_CURRENT_DEBT          decimal(9,2)
      , CUST_30_DAY_DEBT           decimal(9,2)
      , CUST_60_DAY_DEBT           decimal(9,2)
-     , CUST_SETTLEMENT_DISCOUNT   decimal(9,2)
      , CUST_VOL_REBATE            decimal(9,2)
+     , CUST_SETTLEMENT_DISCOUNT   decimal(9,2)
      , REC_TMSTAMP                timestamp 
-    ) in database Z63454;   
+    ) in database Z63454; 
+
+    CREATE TABLE CUST_REBATE_TBL
+     ( CUST_NO                     CHAR(8)
+     , REBATE_TYPE_CODE            char(2)
+     , PROD_NO                     char(6)
+     , REBATE_APPLIES_FROM         date
+     , REBATE_APPLIES_TO           date
+     , GENERAL_REBATE_PERCENT      decimal(9,2)
+     , CASH_REBATE_PERCENT         decimal(9,2)
+     , VOL_REBATE_PERCENT          decimal(9,2)
+     , VOL_REBATE_VOLUME           smallint
+     , SETTLEMENT_DISCOUNT_PERCENT decimal(9,2)
+     , DELETED_FLAG                char(1)
+     , REC_TMSTAMP                 timestamp 
+    ) in database Z63454;
 
     CREATE TABLE DEBTOR_TRANSN_TBL
     ( CUST_NO                     CHAR(8)
@@ -90,5 +109,7 @@ create table STOCK_HOLDING_TBL
     , SALE_QTY                smallint
     , SALE_PRICE              decimal(9,2)
     , SALE_TOTAL              decimal(9,2)
+    , TRANSN_PAYT_METHOD_CODE char(1)
+    , TRANSN_APPLIED_INDIC    char(1)
     , REC_TMSTAMP             timestamp
     ) IN DATABASE Z63454;                        
