@@ -83,12 +83,13 @@ create table STOCK_HOLDING_TBL
     ) IN DATABASE Z63454;
 
     create table STOCK_TRANSN_TBL
-    ( LOCN_NO                 Char(4)     
-    , PROD_NO                 Char(6)
-    , PACK_CODE               Char(4)
-    , TRANSN_TYPE_CODE        Char(1)
-    , STOCK_TRANSN_QTY        Integer
-    , REC_TMSTAMP             timestamp   
+    ( LOCN_NO                  Char(4)     
+    , PROD_NO                  Char(6)
+    , PACK_CODE                Char(4)
+    , STOCK_TRANSN_TYPE_CODE   Char(2)
+    , TRANSN_DATE              Date
+    , STOCK_TRANSN_QTY         Integer
+    , REC_TMSTAMP              timestamp   
     ) IN DATABASE Z63454
     ;
 
