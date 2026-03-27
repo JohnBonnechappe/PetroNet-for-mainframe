@@ -56,7 +56,14 @@
      ( LOCN_NO                   char(4)                              
      , LOCN_NAME                 char(25)                         
      , REC_TMSTAMP               timestamp                           
-     ) IN DATABASE Z63454;                                    
+     ) IN DATABASE Z63454;
+
+  create table RETAIL_LOCN_TBL                                            
+     ( RETAIL_LOCN_NO            char(4) 
+     , LOCN_NO                   char(4)
+     , RETAIL_LOCN_NAME          char(25)                         
+     , REC_TMSTAMP               timestamp                           
+     ) IN DATABASE Z63454;  
 --                                                        
   create table PROD_TBL                                       
      ( PROD_NO                   char(6)              
@@ -96,6 +103,7 @@ create table STOCK_HOLDING_TBL
 
     create table RETAIL_TRANSN_TBL
     ( SEQ_NO                  smallint
+    , RETAIL_LOCN_NO          char(4)
     , SYS_NAME                char(10)
     , SITE_NAME               char(10)
     , TRANSN_DATE             char(08)
@@ -104,6 +112,7 @@ create table STOCK_HOLDING_TBL
     , TRANSN_PAYT_METHOD_CODE char(1)
     , TRASN_APPLIED_INDIC     char(1)
     , CUST_NO                 char(08)
+    , PROD_NO                 char(6)
     , SALE_ITEM               char(10)
     , SALE_QTY                smallint
     , SALE_PRICE              decimal(9,2)
@@ -111,4 +120,13 @@ create table STOCK_HOLDING_TBL
     , TRANSN_PAYT_METHOD_CODE char(1)
     , TRANSN_APPLIED_INDIC    char(1)
     , REC_TMSTAMP             timestamp
-    ) IN DATABASE Z63454;                        
+    ) IN DATABASE Z63454;  
+
+    create table RETAIL_SALES_DKT_TBL
+    , LOCN_NO                 char(4)
+    , SALE_ITEM               char(10)
+    , TRANSN_DATE             date
+    , SALE_TOTAL              decimal(9,2)
+    , REC_TMSTAMP             timestamp
+    ) IN DATABASE Z63454;
+
