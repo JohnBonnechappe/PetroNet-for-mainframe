@@ -26,15 +26,13 @@
      , CUST_CURRENT_DEBT          decimal(9,2)
      , CUST_30_DAY_DEBT           decimal(9,2)
      , CUST_60_DAY_DEBT           decimal(9,2)
-     , CUST_VOL_REBATE            decimal(9,2)
-     , CUST_SETTLEMENT_DISCOUNT   decimal(9,2)
      , REC_TMSTAMP                timestamp 
     ) in database Z63454; 
 
     CREATE TABLE CUST_REBATE_TBL
-     ( CUST_NO                     CHAR(8)
-     , REBATE_TYPE_CODE            char(2)
-     , PROD_NO                     char(6)
+     ( CUST_NO                     CHAR(8) NOT NULL
+     , REBATE_TYPE_CODE            char(2) NOT NULL
+     , PROD_NO                     char(6) NOT NULL
      , REBATE_APPLIES_FROM         date
      , REBATE_APPLIES_TO           date
      , GENERAL_REBATE_PERCENT      decimal(9,2)
@@ -48,7 +46,7 @@
 
     CREATE TABLE DEBTOR_TRANSN_TBL
     ( CUST_NO                     CHAR(8)
-    , DEBTOR_TRANSN_TYPE_CODE     CHAR(1)
+    , DEBTOR_TRANSN_TYPE_CODE     CHAR(2)
     , TRANSN_DATE                 timestamp
     , TRANSN_AMT                  decimal(9,2)
     , REC_TMSTAMP                 timestamp
