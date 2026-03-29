@@ -2,44 +2,38 @@
        PROGRAM-ID pnre306.
        AUTHOR. John Braddock
        DATE-WRITTEN. 08-Mar-2026
-      ***************************************************************** 00021003
+      *****************************************************************
       * Name: Apply Retail transactions
       * Description:
       * Apply the retail transactions from RETAIL_TRANSN_TBL to
       * customers and stock levels.
       * Transactions can be applied to either customers, stocks or both
       * depending on a parameter.
-      ***************************************************************** 00022003
-       ENVIRONMENT DIVISION.                                            00020000
-       INPUT-OUTPUT SECTION.                                            00020105
+      * RUN_TYPE="C" cust, "S" stocks, "A" all.
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT print_file   ASSIGN TO prtfile
            FILE STATUS IS ws_file_sts.
 
-       DATA DIVISION.                                                   00030000
+       DATA DIVISION.
        FILE SECTION.
        FD  print_file
            RECORDING MODE F
-           RECORD CONTAINS 80 CHARACTERS.
-       01 print_rec.
-          03  seq_nbr                  PIC 9(4).
-          03  retail_sys_name          PIC X(10).
-          03  site_name                PIC X(10).
-          03  transn_date              PIC X(8).
-          03  transn_time              PIC X(6).
-          03  cust_no                  PIC X(8).
-          03  sale_item                PIC X(10).
-          03  sale_qty                 PIC 9(4).
-          03  sale_price               PIC 9(7)V9(2).
-          03                           PIC X(11).
-       WORKING-STORAGE SECTION.                                         00031004
+           RECORD CONTAINS 108 CHARACTERS.
+       01 print_rec                    PIC X(108).
+
+
+       WORKING-STORAGE SECTION.
        01  ws_pgm_err_sts              PIC 9.
 
        01  ws_file_sts                 PIC X(2).
        01  ws_prt_file_open_sts        PIC X.
+      *
+       0l  ws_param_length             PIC -9(4).
 
-      * l
-       01  ws_ws_rtl_tbl_oc_sts        PIC X.
+       01  ws_rtl_tbl_oc_sts           PIC X.
        01  ws_rtl_eoc_sts              PIC X.
 
        01  ws_rtl_rec_cnt1             PIC 9(4) COMP.
@@ -50,23 +44,110 @@
        01  ws_retail_sys_name          PIC X(10).
        01  ws_tmstamp                  PIC X(26).
        01  ws_cust_no                  PIC X(8).
+       01  ws_transn_date              PIC X(8).
+       01  ws_transn_date_26           PIC X(26).
+       01  ws_debtor_transn_type_code  PIC X(1) VALUE "R".
 
+       01  ws_sale_item.
+           03  ws_prod_code            PIC X(6).
+           03  filler                  PIC X(4).
+
+       01  ws_distrib_cust_cnt         PIC S9(4) COMP.
+       01  ws_retail_cust_cnt          PIC S9(4) COMP.
+       01  ws_distrib_prod_cnt         PIC S9(4) COMP.
+       01  ws_retail_prod_cnt          PIC S9(4) COMP.
+
+
+       01  ws_print_hdr_rec.
+           03 seq_no                  PIC X(04) VALUE "Seq".
+           03                         PIC X     VALUE SPACE.
+           03 sys_name                PIC X(10) VALUE "Sys".
+           03                         PIC X     VALUE SPACE.
+           03 site_name               PIC X(10) VALUE "Site".
+           03                         PIC X     VALUE SPACE.
+           03 transn_date             PIC X(08) VALUE "Trn Dt".
+           03                         PIC X     VALUE SPACE.
+           03 transn_time             PIC X(06) VALUE "Trn Tm".
+           03                         PIC X     VALUE SPACE.
+           03 transn_type             PIC x(04) VALUE "Type".
+           03                         PIC X     VALUE SPACE.
+           03 transn_method           PIC X(06) VALUE "Method".
+           03                         PIC X     VALUE SPACE.
+           03 cust_no                 PIC X(08) VALUE "Cust".
+           03                         PIC X     VALUE SPACE.
+           03 sale_item               PIC X(10) VALUE "Item".
+           03                         PIC X(04) VALUE SPACE.
+           03 sale_qty                PIC X(04) VALUE "Qty".
+           03                         PIC X(02) VALUE SPACE.
+           03 sale_price              PIC X(09) VALUE "Price".
+           03                         PIC X(01) VALUE SPACE.
+
+       01 print_tran_rec.
+          03  seq_nbr                  PIC 9(4).
+          03                           PIC X     VALUE SPACE.
+          03  retail_sys_name          PIC X(10).
+          03                           PIC X     VALUE SPACE.
+          03  site_name                PIC X(10).
+          03                           PIC X     VALUE SPACE.
+          03  transn_date              PIC X(8).
+          03                           PIC X     VALUE SPACE.
+          03  transn_time              PIC X(6).
+          03                           PIC X     VALUE SPACE.
+          03  cust_no                  PIC X(8).
+          03                           PIC X     VALUE SPACE.
+          03  sale_item                PIC X(10).
+          03                           PIC X     VALUE SPACE.
+          03  sale_qty                 PIC 9(4).
+          03                           PIC X     VALUE SPACE.
+          03  sale_price               PIC 9(7)V9(2).
+          03                           PIC X     VALUE SPACE.
+          03                           PIC X(3).
+          03  applied_to               PIC X.
+          03                           PIC X(7).
+
+       01  ws_DB_PN                     PIC X(16) Value "Z63454".
        01  ws_sqlcode                  PIC -9(9).
+       01  ws_transaction_started_flag  PIC X.
 
-       EXEC SQL INCLUDE SQLCA END-EXEC.
-       EXEC SQL INCLUDE RTLTRN  END-EXEC.
+       01  ws_param.
+           03 ws_param_run_type_length PIC S9(4) COMP.
+           03 ws_param_run_type        PIC X.
+
+       EXEC SQL INCLUDE SQLCA    END-EXEC.
+       EXEC SQL INCLUDE RTLTRN   END-EXEC.
+       EXEC SQL INCLUDE CUSTTBL  END-EXEC.
+       EXEC SQL INCLUDE CSTACCT  END-EXEC.
+       EXEC SQL INCLUDE DEBTRAN  END-EXEC.
+       EXEC SQL INCLUDE STKTRAN  END-EXEC.
+
        EXEC SQL
            DECLARE rtl_trn_tbl_c CURSOR FOR
-               SELECT CUST_NO
+               SELECT RETAIL_LOCN_CODE
+                    , CUST_NO
+                    , TRANSN_TYPE_CODE
+                    , TRANSN_DATE
+                    , sale_item
+                    , sale_qty
+                    , SALE_PRICE
                  FROM RETAIL_TRANSN_TBL
+                 WHEREW transn_applied_indic <> 'L'
            END-EXEC.
 
-       PROCEDURE DIVISION.                                              00040000
-           DISPLAY "PNRE306  Version 1.02"
+       LINKAGE SECTION.
+       01  ls_param.
+           03 ls_param_length      PIC S9(4) COMP.
+           03 ls_param_run_type    PIC X.
+
+       PROCEDURE DIVISION USING ls_param.
+           DISPLAY "PNRE306  Version 1.20"
 
            PERFORM 1000_init
 
-           PERFORM 2000_connect
+           PERFORM 3000_get_run_type
+
+      *     IF ws_pgm_err_sts = 0
+      *         PERFORM 2000_connect
+      *     END-IF
 
            IF ws_pgm_err_sts = 0
                PERFORM 200_open_print_file
@@ -78,18 +159,18 @@
 
            IF ws_pgm_err_sts = 0
                MOVE "N" TO ws_rtl_eoc_sts
-               PERFORM 1000_read_tran_rec
+               PERFORM 1000_fc_rtl_tran_tbl
            END-IF
 
            IF ws_pgm_err_sts = 0
-              PERFORM 500_process_rtl_file
-                UNTIL ws_rtl_eof_sts = "Y"
+              PERFORM 500_process_rtl_rec
+                UNTIL ws_rtl_eoc_sts = "Y"
                    OR ws_pgm_err_sts  = 1
            END-IF
 
            PERFORM 900_cc_rtl_trn_tbl
 
-           PERFORM 3000_close_transaction
+           PERFORM 8000_close_transaction
 
            PERFORM 700_close_files
 
@@ -101,9 +182,15 @@
            MOVE 0    TO ws_pgm_err_sts
            MOVE "N"  TO ws_prt_file_open_sts
 
+           MOVE "N"  TO ws_transn_started_flag
+
            MOVE ZERO TO ws_rtl_rec_cnt1
+           MOVE ZERO TO ws_retail_cust_cnt
+           MOVE ZERO TO ws_distrib_cust_cnt
            MOVE ZERO TO ws_cust_upd_cnt
            MOVE ZERO TO ws_stk_upd_cnt
+           MOVE ZERO TO ws_retail_prod_cnt
+           MOVE ZERO TO ws_distrib_prod_cnt
       *     MOVE "N"  TO ws_tbl_sts
            .
 
@@ -117,11 +204,10 @@
                DISPLAY "error open rtl file. sts=" ws_file_sts
            END-IF
            .
-
+      *
        200_oc_rtl_trn_tbl.
            EXEC SQL
                OPEN rtl_trn_tbl_c
-      *         CUST_NO
            END-EXEC.
 
            EVALUATE sqlcode
@@ -135,9 +221,9 @@
            END-EVALUATE
            .
 
-       500_process_rtl_file.
+       500_process_rtl_rec.
       *     PERFORM 2000_LOAD_rtl_recSELECT
-           PERFORM 2000_PROCESS_rtl_rec
+           PERFORM 2000_process_rtl_rec
 
            IF ws_pgm_err_sts = 0
                PERFORM 1000_fc_rtl_tran_tbl
@@ -159,19 +245,26 @@
        1000_fc_rtl_tran_tbl.
            EXEC SQL
                 FETCH rtl_trn_tbl_c
-                 INTO :ws_cust_no
+                 INTO :rt-retail-locn-code
+                    , :rt_cust_no
+                    , :rt-transn-type-code
+                    , :rt-transn-date
+                    , :rt-sale-item
+                    , :rt-sale-qty
+                    , :rt-sale-price
            END-EXEC.
 
            EVALUATE sqlcode
            WHEN 0
-                  DISPLAY "read rec"
+                  DISPLAY "wread rec, loc=" rt-retail-locn-code
                   ADD 1 TO ws_rtl_rec_cnt1
            WHEN 100
                   DISPLAY "eof rtl rec"
                   MOVE "Y" TO ws_rtl_eoc_sts
       *            MOVE "Y" TO ws_sts
            WHEN OTHER
-                  DISPLAY "read rec sts=" ws_file_sts
+                  MOVE sqlcode TO ws_sqlcode
+                  DISPLAY "sql fetch error code=" ws_sqlcode
                   MOVE 1 TO ws_pgm_err_sts
            END-EVALUATE
            .
@@ -191,31 +284,39 @@
            END-EVALUATE
            .
 
-       2000_connect.                                                    00110008
-           DISPLAY "Connecting DB2"                                     00120008
+       3000_get_run_type.
+           IF ls_param_length = ZERO
+               DISPLAY "No Run Type parameter"
+               MOVE 1 TO  ws_pgm_err_sts
+           ELSE
+               MOVE ls_param_length TO ws_param_length
+               DISPLAY "received run type param=" ls_param_run_type
+                     , "size=" ws_param_length
+               EVALUATE ws_param_run_type
+               WHEN "C"
+                 DISPLAY "Running for Customers"
+               WHEN "S"
+                  DISPLAY "Runnimg for Stocks"
+               WHEN "A"
+                  DISPLAY "Running for all"
+               WHEN OTHER
+                  DISPLAY "Run Type param not valid"
+                  MOVE 1 TO  ws_pgm_err_sts
+               END-EVALUATE
+           END-IF
            .
 
-       2000_process_rtl_rec.
-           IF ws_cust_no NOT = SPACES
-               PERFORM 2100_process_cust
-           END-IF
-
-           IF ws_prod_no NOT = SPACES
-               PERFORM 2500_process_stk
-           END-IF
-
-           DISPLAY "selecting cust_acct_tbl rec"
+       2000_connect.
+           DISPLAY "Connecting DB2 to " ws_db_pn
            EXEC SQL
-               SELECT CUST_NO
-                 INTO :ws_cust_no
-                 FROM CUST_ACCT_TBL
-               LIMIT 1
+               CONNECT TO :ws_db_pn
+      *         BEGIN TRANSACTION
            END-EXEC
-           .
 
            EVALUATE sqlcode
            WHEN 0
-               DISPLAY "record selected"
+               DISPLAY "Transn Started"
+               MOVE "Y" TO ws_transaction_started_flag
            WHEN OTHER
                MOVE sqlcode TO ws_sqlcode
                DISPLAY "sql error code=" ws_sqlcode
@@ -224,22 +325,93 @@
            END-EVALUATE
            .
 
-       2100_process_cust.
-           DISPLAY "loading rtl rec"
+       2000_process_rtl_rec.
+           IF ls_param_run_type = "C" OR "A"
+               IF rt-cust-no OF retail-transn-tbl NOT = SPACES
+                   ADD 1 TO ws_distrib_cust_cnt
+                   PERFORM 2100_process_customer
+               ELSE
+                   DISPLAY "rtl cust"
+                   ADD 1 TO ws_retail_cust_cnt
+               END-IF
+           END-IF
 
-           MOVE cust_no   OF rtl_rec
-             TO cust-no   OF dclretail-transn-tbl
-           MOVE sale_item OF rtl_rec
-             TO sale-item OF dclretail-transn-tbl
-           MOVE sale_qty  OF rtl_rec
-             TO sale-qty  OF dclretail-transn-tbl
+           IF ws_pgm_err_sts = 0
+               IF ls_param_run_type = "S" OR "A"
+      *            IF rt-prod-no OF retail-transn-tbl NOT = SPACES
+                       ADD 1 TO ws_distrib_prod_cnt
+                       PERFORM 2500_process_stk
+      *            ELSE
+                       DISPLAY "rtl prod"
+                       ADD 1 TO ws_retail_prod_cnt
+      *            END-IF
+               END-IF
+           END-IF
+           .
 
-           MOVE retail_sys_name OF rtl_rec
-             TO ws_retail_sys_name
-           MOVE "2026-03-08 15:16:10.123" TO ws_tmstamp
+       2100_process_customer.
+           PERFORM 2110_get_cust_acct_rec
+
+           If sqlcode = 0
+               PERFORM 2120_add_debtor_transn_rec
+           END-IF
+           .
+
+       2110_get_cust_acct_rec.
+           DISPLAY "selecting cust_acct_tbl rec"
+           EXEC SQL
+               SELECT c.CUST_NO
+                 INTO :rt-cust-no
+                 FROM CUST_ACCT_TBL c
+                 WHERE c.CUST_NO = :rt-cust-no
+               LIMIT 1
+           END-EXEC
+           .
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "record selected"
+           WHEN 100
+               DISPLAY "Cust not a valid distributor customer"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+               DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
+           .
+
+       2120_add_debtor_transn_rec.
+
+           DISPLAY "loading rtl rec into deb_trn"
+
+           MOVE rt-cust-no   OF retail-transn-tbl
+             TO dt-cust-no   OF debtor_transn_tbl
+
+      *     MOVE sale-item OF retail-transn-tbl
+      *       TO sale-item OF debtor_transn_tbl
+
+           MOVE rt-sale-qty  OF retail-transn-tbl
+             TO dt-transn-qty OF debtor_transn_tbl
+
+      *     MOVE retail_sys_name OF rtl_rec
+      *       TO ws_retail_sys_name
+
+           DISPLAY "compute amt"
+           COMPUTE dt-transn-amt  OF debtor_transn_tbl
+                 = rt-sale-wty    OF retail-transn-tbl
+                 * rt-sale-price  OF retail-transn-tbl
+           ON SIZE ERROR
+             DISPLAY "Size error on transn_amt"
+             MOVE ZERO TO dt-transn-amt OF debtor_transn_tbl
+           END-COMPUTE
+
+           MOVE FUNCTION CURRENT DATE
+             TO dt-transn-date  OF debtor_transn_tbl
+           MOVE "2026-03-08 15:16:10.123" TO dt-rec-tmstamp
 
            EXEC SQL
-               INSERT INTO CUST_TRANSN_TBL
+               INSERT INTO DEBTOR_TRANSN_TBL
                (SEQ_NO
                ,RETAIL_SYS_NAME
                ,SITE_NAME
@@ -255,9 +427,11 @@
                (:seq-no
                ,:ws_retail_sys_name
                ,:site-name
-               ,:transn-date
+               ,:ws_transn_date
+      *          OF debtor_transn_tbl
                ,:transn-time
-               ,:cust-no
+               ,:ws_cust_no
+      *             OF debtor_transn_tbl
                ,:sale-item
                ,:sale-qty
                ,:sale-price
@@ -268,7 +442,7 @@
 
            EVALUATE sqlcode
            WHEN 0
-               DISPLAY "record inserted"
+               DISPLAY "Debtor Transn record inserted"
            WHEN OTHER
                MOVE sqlcode TO ws_sqlcode
                DISPLAY "sql error code=" ws_sqlcode
@@ -281,7 +455,7 @@
            DISPLAY "inserting STK_TRANSN_TBL"
            .
 
-       3000_close_transaction.
+       8000_close_transaction.
            IF ws_pgm_err_sts = 0
                DISPLAY "Initiated"
            ELSE
@@ -301,4 +475,4 @@
                    MOVE 1 TO  ws_pgm_err_sts
            END-EVALUATE
             .
-      * eof                                                            00130008
+      * eof
