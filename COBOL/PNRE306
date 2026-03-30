@@ -27,6 +27,7 @@
 
        WORKING-STORAGE SECTION.
        01  ws_pgm_err_sts              PIC 9.
+       01  ws_rec_tmstamp              PIC X(26).
 
        01  ws_file_sts                 PIC X(2).
        01  ws_prt_file_open_sts        PIC X.
@@ -80,9 +81,9 @@
            03 sale_qty                PIC X(04) VALUE "Qty".
            03                         PIC X(02) VALUE SPACE.
            03 sale_price              PIC X(09) VALUE "Price".
-           03                         PIC X(01) VALUE SPACE.
+           03                         PIC X(15) VALUE SPACE.
 
-       01 print_tran_rec.
+       01 ws_print_tran_rec.
           03  seq_nbr                  PIC 9(4).
           03                           PIC X     VALUE SPACE.
           03  retail_sys_name          PIC X(10).
@@ -132,6 +133,7 @@
                     , SALE_PRICE
                  FROM RETAIL_TRANSN_TBL
                  WHERE transn_applied_indic <> "L"
+                 FOR UPDATE OF transn_applied_indic
            END-EXEC.
 
        LINKAGE SECTION.
@@ -146,12 +148,16 @@
 
            PERFORM 3000_get_run_type
 
-      *     IF ws_pgm_err_sts = 0
-      *         PERFORM 2000_connect
-      *     END-IF
+           IF ws_pgm_err_sts = 0
+               PERFORM 2000_connect
+           END-IF
 
            IF ws_pgm_err_sts = 0
                PERFORM 200_open_print_file
+           END-IF
+
+           IF ws_pgm_err_sts = 0
+              PERFORM 400_print_hdr
            END-IF
 
            IF ws_pgm_err_sts = 0
@@ -193,10 +199,14 @@
            MOVE ZERO TO ws_retail_prod_cnt
            MOVE ZERO TO ws_distrib_prod_cnt
       *     MOVE "N"  TO ws_tbl_sts
+
+           MOVE "2026-03-08 15.16.10.123   "
+      *     MOVE FUNCTION CURRENT-DATE
+             TO ws_rec_tmstamp
            .
 
        200_open_print_file.
-           OPEN INPUT  print_file
+           OPEN OUTPUT  print_file
            if ws_file_sts = "00"
                DISPLAY "Opened retail transaction list file"
                MOVE "Y" TO ws_prt_file_open_sts
@@ -222,13 +232,41 @@
            END-EVALUATE
            .
 
+       400_print_hdr.
+           MOVE ws_print_hdr_rec TO print_rec
+
+           PERFORM 2000_write_prt_rec
+           .
+
        500_process_rtl_rec.
       *     PERFORM 2000_LOAD_rtl_recSELECT
            PERFORM 2000_process_rtl_rec
 
            IF ws_pgm_err_sts = 0
+               PERFORM 1500_update_retail_transn
+           END-IF
+
+           IF ws_pgm_err_sts = 0
+               PERFORM 1200_write_prt_line_rec
+           END-IF
+
+           IF ws_pgm_err_sts = 0
                PERFORM 1000_fc_rtl_tran_tbl
            END-IF
+           .
+
+       1200_write_prt_line_rec.
+           MOVE  rt-retail-locn-code OF retail-transn-tbl
+             TO site_name            OF ws_print_tran_rec
+           MOVE  rt-sale-item        OF retail-transn-tbl
+             TO  sale_item           OF ws_print_tran_rec
+           MOVE  rt-sale-qty         OF retail-transn-tbl
+             TO  sale_qty            OF ws_print_tran_rec
+           MOVE  rt-sale-price       OF retail-transn-tbl
+             TO  sale_price          OF ws_print_tran_rec
+
+           MOVE ws_print_tran_rec    TO print_rec
+           PERFORM 2000_write_prt_rec
            .
 
        700_close_files.
@@ -271,18 +309,38 @@
            .
 
        900_cc_rtl_trn_tbl.
-           EXEC SQL
-              CLOSE rtl_trn_tbl_c
-           END-EXEC.
+           IF ws_rtl_tbl_oc_sts = "Y"
+               EXEC SQL
+                  CLOSE rtl_trn_tbl_c
+               END-EXEC
 
-           EVALUATE sqlcode
-           WHEN 0
-               DISPLAY "rtl trn tbl closed"
-           WHEN OTHER
-               MOVE sqlcode TO ws_sqlcode
-               DISPLAY "sql error code=" ws_sqlcode
-               MOVE 1 TO  ws_pgm_err_sts
-           END-EVALUATE
+               EVALUATE sqlcode
+               WHEN 0
+                   DISPLAY "rtl trn tbl closed"
+               WHEN OTHER
+                   MOVE sqlcode TO ws_sqlcode
+                   DISPLAY "sql error code=" ws_sqlcode
+                   MOVE 1 TO  ws_pgm_err_sts
+               END-EVALUATE
+           END-IF
+           .
+
+       1500_update_retail_transn.
+               DISPLAY "Updating rtl trn"
+               EXEC SQL
+                   UPDATE retail_transn_tbl
+                   SET transn_applied_indic ="L"
+                   WHERE CURRENT OF rtl_trn_tbl_c
+               END-EXEC
+
+               EVALUATE sqlcode
+               WHEN 0
+                   DISPLAY "row updated"
+               WHEN OTHER
+                   MOVE sqlcode TO ws_sqlcode
+                   DISPLAY "sql error code=" ws_sqlcode
+                   MOVE 1 TO  ws_pgm_err_sts
+               END-EVALUATE
            .
 
        3000_get_run_type.
@@ -309,10 +367,13 @@
 
        2000_connect.
            DISPLAY "Connecting DB2 to " ws_db_pn
-           EXEC SQL
-               CONNECT TO :ws_db_pn
+      *     EXEC SQL
+      *         CONNECT TO :ws_db_pn
+      *         LOCK TABLE cust_tbl          IN SHARE MODE
+      *                  , retail_locn_tbl   IN SHARE MODE
+      *                  , retail_transn_tbl IN SHARE MODE
       *         BEGIN TRANSACTION
-           END-EXEC
+      *     END-EXEC
 
            EVALUATE sqlcode
            WHEN 0
@@ -418,8 +479,7 @@
       *     MOVE FUNCTION CURRENT-DATE
              TO dt-transn-date  OF debtor_transn_tbl
 
-           MOVE "2026-03-08 15.16.10.123"
-      *     MOVE FUNCTION CURRENT-DATE
+           MOVE ws_rec_tmstamp
              TO dt-rec-tmstamp   OF debtor_transn_tbl
 
            DISPLAY "sql, deb trn loading"
@@ -472,6 +532,9 @@
       *     MOVE rt-transn-date        OF retail-transn-tbl
              TO stt-transn-date       OF stock-transn-tbl
 
+           MOVE ws_rec_tmstamp
+             TO stt-rec-tmstamp      OF stock-transn-tbl
+
            EXEC SQL
                INSERT INTO STOCK_TRANSN_TBL
                (LOCN_CODE
@@ -520,11 +583,12 @@
                  TO rsd-transn-date     OF retail-sales-dkt-tbl
 
       *         MOVE FUNCTION CURRENT-DATE
-               MOVE "2026-03-08 15.16.10.123"
+               MOVE ws_rec_tmstamp
                  TO rsd-rec-tmstamp OF retail-sales-dkt-tbl
 
+                MOVE ZERO
       *         MOVE rt-sale-total       OF retail-transn-tbl
-      *           TO rsd-sale-total      OF retail-sales-dkt-tbl
+                 TO rsd-sale-total      OF retail-sales-dkt-tbl
 
                EXEC SQL
                INSERT INTO retail_sales_dkt_tbl
@@ -560,6 +624,17 @@
                DISPLAY "sql error mesg=" sqlerrm
                MOVE 1 TO  ws_pgm_err_sts
            END-EVALUATE
+           .
+
+       2000_write_prt_rec.
+           WRITE print_rec
+           IF ws_file_sts = "00"
+               DISPLAY "wrote prt rec"
+               CONTINUE
+           ELSE
+               DISPLAY "err write prt rec sts=" ws_file_sts
+               MOVE 1 TO ws_pgm_err_sts
+           END-IF
            .
 
        8000_close_transaction.
