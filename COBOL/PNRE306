@@ -10,6 +10,11 @@
       * Transactions can be applied to either customers, stocks or both
       * depending on a parameter.
       * RUN_TYPE="C" cust, "S" stocks, "A" all.
+      *
+      * when loaded, records on the retail_transn_tbl are updateed
+      * to applied_indic='L'
+      * distributor customers have the transn_amt added to
+      * their current debt.
       *****************************************************************
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
@@ -104,7 +109,7 @@
           03                           PIC X     VALUE SPACE.
           03                           PIC X(3).
           03  applied_to               PIC X.
-          03                           PIC X(7).
+          03                           PIC X(18).
 
        01  ws_DB_PN                     PIC X(16) Value "Z63454".
        01  ws_sqlcode                  PIC -9(9).
@@ -295,6 +300,7 @@
 
            EVALUATE sqlcode
            WHEN 0
+                  DISPLAY "-------------------------"
                   DISPLAY "read rec, loc=" rt-retail-locn-code
                   ADD 1 TO ws_rtl_rec_cnt1
            WHEN 100
@@ -415,8 +421,13 @@
        2100_process_customer.
            PERFORM 2110_get_cust_acct_rec
 
-           If sqlcode = 0
-               PERFORM 2120_add_debtor_transn_rec
+           IF ws_pgm_err_sts = 0
+               If sqlcode = 0
+                   PERFORM 2120_add_debtor_transn_rec
+               END-IF
+               IF ws_pgm_err_sts = 0
+                   PERFORM 2150_update_cust_debt
+               END-IF
            END-IF
            .
 
@@ -509,6 +520,27 @@
            WHEN OTHER
                MOVE sqlcode TO ws_sqlcode
                DISPLAY "sql error code=" ws_sqlcode
+               DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
+           .
+
+       2150_update_cust_debt.
+           DISPLAY "updating cust debt"
+           EXEC SQL
+               UPDATE cust_acct_tbl ca
+                  SET ca.cust_current_debt
+                    = ca.cust_current_debt + :dt-transn-amt
+                    WHERE ca.cust_no = :dt-cust-no
+           END-EXEC
+           .
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "updated cust debt"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql upd error code=" ws_sqlcode
                DISPLAY "sql error mesg=" sqlerrm
                MOVE 1 TO  ws_pgm_err_sts
            END-EVALUATE
@@ -639,7 +671,10 @@
 
        8000_close_transaction.
            IF ws_pgm_err_sts = 0
-               DISPLAY "Initiated"
+               DISPLAY "Initiated Commit"
+               EXEC SQL
+                   COMMIT
+               END-EXEC
            ELSE
                DISPLAY "Initiated Rollback"
                EXEC SQL
@@ -649,7 +684,7 @@
 
            EVALUATE sqlcode
                WHEN 0
-                   DISPLAY "Transaction rolled back"
+                   DISPLAY "Transaction rback/cmt"
                WHEN OTHER
                    MOVE sqlcode TO ws_sqlcode
                    DISPLAY "sql error code=" ws_sqlcode
