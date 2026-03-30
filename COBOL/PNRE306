@@ -119,7 +119,8 @@
        EXEC SQL INCLUDE CSTACCT  END-EXEC.
        EXEC SQL INCLUDE DEBTRAN  END-EXEC.
        EXEC SQL INCLUDE STKTRAN  END-EXEC.
-
+       EXEC SQL INCLUDE RTLSDT   END-EXEC.
+       
        EXEC SQL
            DECLARE rtl_trn_tbl_c CURSOR FOR
                SELECT RETAIL_LOCN_CODE
@@ -344,6 +345,7 @@
       *            ELSE
                        DISPLAY "rtl prod"
                        ADD 1 TO ws_retail_prod_cnt
+                       PERFORM 2800_process_retail
       *            END-IF
                END-IF
            END-IF
@@ -388,54 +390,55 @@
            MOVE rt-cust-no   OF retail-transn-tbl
              TO dt-cust-no   OF debtor_transn_tbl
 
-      *     MOVE sale-item OF retail-transn-tbl
-      *       TO sale-item OF debtor_transn_tbl
+      *     MOVE rt-sale-item OF retail-transn-tbl
+      *       TO dt-sale-item OF debtor_transn_tbl
 
-           MOVE rt-sale-qty  OF retail-transn-tbl
+           MOVE rt-sale-qty   OF retail-transn-tbl
              TO dt-transn-qty OF debtor_transn_tbl
 
-      *     MOVE retail_sys_name OF rtl_rec
-      *       TO ws_retail_sys_name
+      *    MOVE rt-sale-price  OF retail-transn-tbl
+      *      TO dt-sale-price OF debtor_transn_tbl
 
            DISPLAY "compute amt"
+                 , " qty=" rt-sale-qty    OF retail-transn-tbl
+                 , " prc=" rt-sale-qty    OF retail-transn-tbl
+
            COMPUTE dt-transn-amt  OF debtor_transn_tbl
-                 = rt-sale-wty    OF retail-transn-tbl
+                 = rt-sale-qty    OF retail-transn-tbl
                  * rt-sale-price  OF retail-transn-tbl
            ON SIZE ERROR
              DISPLAY "Size error on transn_amt"
              MOVE ZERO TO dt-transn-amt OF debtor_transn_tbl
            END-COMPUTE
 
-           MOVE FUNCTION CURRENT DATE
-             TO dt-transn-date  OF debtor_transn_tbl
-           MOVE "2026-03-08 15:16:10.123" TO dt-rec-tmstamp
+      *     MOVE retail_sys_name OF rtl_rec
+      *       TO ws_retail_sys_name
 
+           MOVE FUNCTION CURRENT-DATE
+             TO dt-transn-date  OF debtor_transn_tbl
+
+           MOVE FUNCTION CURRENT-DATE
+             TO dt-rec-tmstamp   OF debtor_transn_tbl
+
+      *     MOVE "2026-03-08 15:16:10.123" TO dt-rec-tmstamp
+
+           DISPLAY "sql, loading"
            EXEC SQL
                INSERT INTO DEBTOR_TRANSN_TBL
-               (SEQ_NO
-               ,RETAIL_SYS_NAME
-               ,SITE_NAME
+               (CUST_NO
+               ,DEBTOR_TRANSN_TYPE_CODE
                ,TRANSN_DATE
-               ,TRANSN_TIME
-               ,CUST_NO
-               ,SALE_ITEM
-               ,SALE_QTY
-               ,SALE_PRICE
+               ,TRANSN_QTY
                ,REC_TMSTAMP
+               ,TRANSN_AMT
                )
                VALUES
-               (:seq-no
-               ,:ws_retail_sys_name
-               ,:site-name
-               ,:ws_transn_date
-      *          OF debtor_transn_tbl
-               ,:transn-time
-               ,:ws_cust_no
-      *             OF debtor_transn_tbl
-               ,:sale-item
-               ,:sale-qty
-               ,:sale-price
-               ,:ws_tmstamp
+               (:dt-cust-no
+               ,:dt_debtor_transn_type_code
+               ,:dt-transn-date
+               ,:dt-transn-qty
+               ,:dt-rec-tmstamp
+               ,:dt-transn-amt
                )
            END-EXEC
            .
@@ -453,6 +456,100 @@
 
        2500_process_stk.
            DISPLAY "inserting STK_TRANSN_TBL"
+           MOVE "R"
+             TO stt-stock-transn-type-code OF stock-transn-tbl
+
+           MOVE rt-sale-item          OF retail-transn-tbl
+             TO ws_sale_item
+
+           MOVE ws_prod_code
+             TO stt-prod-code         OF stock-transn-tbl
+
+           MOVE rt-sale-qty           OF retail-transn-tbl
+             TO stt-stock-transn-qty  OF stock-transn-tbl
+
+           MOVE rt-transn-date        OF retail-transn-tbl
+             TO stt-transn-date       OF stock-transn-tbl
+
+           EXEC SQL
+               INSERT INTO stock_transn_tbl
+               (LOCN_CODE
+               ,PROD_CODE
+               ,PACK_CODE
+               ,STOCK_TRANSN_TYPE_CODE
+               ,STOCK_TRANSN_QTY
+               ,TRANSN_DATE
+               ,REC_TMSTAMP
+               )
+               VALUES
+               (stt-locn-code
+               ,stt-prod-code
+               ,stt-pack-code
+               ,stt-stock-transn-type-code
+               ,stt-stock-transn-qty
+               ,stt-transn-date
+               ,stt-rec-tmstamp
+               )
+           END-EXEC
+           .
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "Stock Transn record inserted"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+               DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
+           .
+
+       2800_process_retail.
+               DISPLAY "inserting into RTL_SLS_DKT_TBL"
+
+               MOVE rt-retail_locn_code OF retail-locn-tbl
+                 TO sdt-locn-code       OF retail-sales-dkt-tbl
+               MOVE rt-cust-no          OF retail-locn-tbl
+                 TO sdt-cust-no         OF retail-sales-dkt-tbl
+               MOVE rt-sale-item        OF retail-locn-tbl
+                 TO sdt-sale-item       OF retail-sales-dkt-tbl
+               MOVE rt-sale-total       OF retail-locn-tbl
+                 TO sdt-sale-total      OF retail-sales-dkt-tbl
+
+               EXEC SQL
+               INSERT INTO retail_sales_dkt_tbl
+               (LOCN_CODE
+               ,CUST_NO
+               ,SALE_ITEM
+               ,TRANSN_DATE
+               ,SALE_TOTAL
+               ,REC_TMSTAMP
+               )
+               VALUES
+               (:sdt-LOCN-CODE
+               ,:SDT-CUST-NO
+               ,:sdt-sale-item
+               ,:sdt-transn-date
+               ,:sdt-sale-total
+               ,:sdt-rec-tmstamp
+               )
+           END-EXEC
+           .
+      *         ,RETAIL_SYS_NAME
+      *         ,SITE_NAME
+      *            ,:sdt_retail_sys_name
+      *            ,:site-name
+      *           ,:seq-no
+
+           EVALUATE sqlcode
+           WHEN 0
+               DISPLAY "Retail Sales Dkt record inserted"
+           WHEN OTHER
+               MOVE sqlcode TO ws_sqlcode
+               DISPLAY "sql error code=" ws_sqlcode
+               DISPLAY "sql error mesg=" sqlerrm
+               MOVE 1 TO  ws_pgm_err_sts
+           END-EVALUATE
            .
 
        8000_close_transaction.
