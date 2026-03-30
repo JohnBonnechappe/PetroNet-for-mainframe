@@ -31,7 +31,7 @@
        01  ws_file_sts                 PIC X(2).
        01  ws_prt_file_open_sts        PIC X.
       *
-       0l  ws_param_length             PIC -9(4).
+       01  ws_param_length             PIC -9(4).
 
        01  ws_rtl_tbl_oc_sts           PIC X.
        01  ws_rtl_eoc_sts              PIC X.
@@ -114,13 +114,13 @@
            03 ws_param_run_type        PIC X.
 
        EXEC SQL INCLUDE SQLCA    END-EXEC.
-       EXEC SQL INCLUDE RTLTRN   END-EXEC.
+       EXEC SQL INCLUDE RTLTRAN  END-EXEC.
        EXEC SQL INCLUDE CUSTTBL  END-EXEC.
        EXEC SQL INCLUDE CSTACCT  END-EXEC.
        EXEC SQL INCLUDE DEBTRAN  END-EXEC.
        EXEC SQL INCLUDE STKTRAN  END-EXEC.
        EXEC SQL INCLUDE RTLSDT   END-EXEC.
-       
+
        EXEC SQL
            DECLARE rtl_trn_tbl_c CURSOR FOR
                SELECT RETAIL_LOCN_CODE
@@ -131,7 +131,7 @@
                     , sale_qty
                     , SALE_PRICE
                  FROM RETAIL_TRANSN_TBL
-                 WHEREW transn_applied_indic <> 'L'
+                 WHERE transn_applied_indic <> "L"
            END-EXEC.
 
        LINKAGE SECTION.
@@ -183,7 +183,7 @@
            MOVE 0    TO ws_pgm_err_sts
            MOVE "N"  TO ws_prt_file_open_sts
 
-           MOVE "N"  TO ws_transn_started_flag
+           MOVE "N"  TO ws_transaction_started_flag
 
            MOVE ZERO TO ws_rtl_rec_cnt1
            MOVE ZERO TO ws_retail_cust_cnt
@@ -198,11 +198,11 @@
        200_open_print_file.
            OPEN INPUT  print_file
            if ws_file_sts = "00"
-               DISPLAY "Opened retail transaction file"
+               DISPLAY "Opened retail transaction list file"
                MOVE "Y" TO ws_prt_file_open_sts
            ELSE
                MOVE 1 TO ws_pgm_err_sts
-               DISPLAY "error open rtl file. sts=" ws_file_sts
+               DISPLAY "error open prt file. sts=" ws_file_sts
            END-IF
            .
       *
@@ -247,7 +247,7 @@
            EXEC SQL
                 FETCH rtl_trn_tbl_c
                  INTO :rt-retail-locn-code
-                    , :rt_cust_no
+                    , :rt-cust-no
                     , :rt-transn-type-code
                     , :rt-transn-date
                     , :rt-sale-item
@@ -257,7 +257,7 @@
 
            EVALUATE sqlcode
            WHEN 0
-                  DISPLAY "wread rec, loc=" rt-retail-locn-code
+                  DISPLAY "read rec, loc=" rt-retail-locn-code
                   ADD 1 TO ws_rtl_rec_cnt1
            WHEN 100
                   DISPLAY "eof rtl rec"
@@ -293,7 +293,7 @@
                MOVE ls_param_length TO ws_param_length
                DISPLAY "received run type param=" ls_param_run_type
                      , "size=" ws_param_length
-               EVALUATE ws_param_run_type
+               EVALUATE ls_param_run_type
                WHEN "C"
                  DISPLAY "Running for Customers"
                WHEN "S"
@@ -414,15 +414,15 @@
       *     MOVE retail_sys_name OF rtl_rec
       *       TO ws_retail_sys_name
 
-           MOVE FUNCTION CURRENT-DATE
+           MOVE "2026-03-08"
+      *     MOVE FUNCTION CURRENT-DATE
              TO dt-transn-date  OF debtor_transn_tbl
 
-           MOVE FUNCTION CURRENT-DATE
+           MOVE "2026-03-08 15.16.10.123"
+      *     MOVE FUNCTION CURRENT-DATE
              TO dt-rec-tmstamp   OF debtor_transn_tbl
 
-      *     MOVE "2026-03-08 15:16:10.123" TO dt-rec-tmstamp
-
-           DISPLAY "sql, loading"
+           DISPLAY "sql, deb trn loading"
            EXEC SQL
                INSERT INTO DEBTOR_TRANSN_TBL
                (CUST_NO
@@ -434,7 +434,7 @@
                )
                VALUES
                (:dt-cust-no
-               ,:dt_debtor_transn_type_code
+               ,:dt-debtor-transn-type-code
                ,:dt-transn-date
                ,:dt-transn-qty
                ,:dt-rec-tmstamp
@@ -463,16 +463,17 @@
              TO ws_sale_item
 
            MOVE ws_prod_code
-             TO stt-prod-code         OF stock-transn-tbl
+            TO stt-prod-code         OF stock-transn-tbl
 
            MOVE rt-sale-qty           OF retail-transn-tbl
              TO stt-stock-transn-qty  OF stock-transn-tbl
 
-           MOVE rt-transn-date        OF retail-transn-tbl
+           MOVE "2026-03-08"
+      *     MOVE rt-transn-date        OF retail-transn-tbl
              TO stt-transn-date       OF stock-transn-tbl
 
            EXEC SQL
-               INSERT INTO stock_transn_tbl
+               INSERT INTO STOCK_TRANSN_TBL
                (LOCN_CODE
                ,PROD_CODE
                ,PACK_CODE
@@ -482,13 +483,13 @@
                ,REC_TMSTAMP
                )
                VALUES
-               (stt-locn-code
-               ,stt-prod-code
-               ,stt-pack-code
-               ,stt-stock-transn-type-code
-               ,stt-stock-transn-qty
-               ,stt-transn-date
-               ,stt-rec-tmstamp
+               (:stt-locn-code
+               ,:stt-prod-code
+               ,:stt-pack-code
+               ,:stt-stock-transn-type-code
+               ,:stt-stock-transn-qty
+               ,:stt-transn-date
+               ,:stt-rec-tmstamp
                )
            END-EXEC
            .
@@ -507,14 +508,23 @@
        2800_process_retail.
                DISPLAY "inserting into RTL_SLS_DKT_TBL"
 
-               MOVE rt-retail_locn_code OF retail-locn-tbl
-                 TO sdt-locn-code       OF retail-sales-dkt-tbl
-               MOVE rt-cust-no          OF retail-locn-tbl
-                 TO sdt-cust-no         OF retail-sales-dkt-tbl
-               MOVE rt-sale-item        OF retail-locn-tbl
-                 TO sdt-sale-item       OF retail-sales-dkt-tbl
-               MOVE rt-sale-total       OF retail-locn-tbl
-                 TO sdt-sale-total      OF retail-sales-dkt-tbl
+               MOVE rt-retail-locn-code OF retail-transn-tbl
+                 TO rsd-locn-code       OF retail-sales-dkt-tbl
+               MOVE rt-cust-no          OF retail-transn-tbl
+                 TO rsd-cust-no         OF retail-sales-dkt-tbl
+               MOVE rt-sale-item        OF retail-transn-tbl
+                 TO rsd-sale-item       OF retail-sales-dkt-tbl
+
+               MOVE "2026-03-08"
+      *         MOVE rt-transn-date      OF retail-transn-tbl
+                 TO rsd-transn-date     OF retail-sales-dkt-tbl
+
+      *         MOVE FUNCTION CURRENT-DATE
+               MOVE "2026-03-08 15.16.10.123"
+                 TO rsd-rec-tmstamp OF retail-sales-dkt-tbl
+
+      *         MOVE rt-sale-total       OF retail-transn-tbl
+      *           TO rsd-sale-total      OF retail-sales-dkt-tbl
 
                EXEC SQL
                INSERT INTO retail_sales_dkt_tbl
@@ -526,12 +536,12 @@
                ,REC_TMSTAMP
                )
                VALUES
-               (:sdt-LOCN-CODE
-               ,:SDT-CUST-NO
-               ,:sdt-sale-item
-               ,:sdt-transn-date
-               ,:sdt-sale-total
-               ,:sdt-rec-tmstamp
+               (:rsd-LOCN-CODE
+               ,:RSD-CUST-NO
+               ,:rsd-sale-item
+               ,:rsd-transn-date
+               ,:rsd-sale-total
+               ,:rsd-rec-tmstamp
                )
            END-EXEC
            .
